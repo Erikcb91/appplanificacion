@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
     <title>Mis Rutas</title>
     <!-- Librería para leer Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,6 +12,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+        /* VARIABLES DE COLOR */
         :root {
             --primary: #2563eb;
             --primary-dark: #1e40af;
@@ -18,20 +20,48 @@
             --card-bg: #ffffff;
             --text-main: #1f2937;
             --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --day-header-bg: #f9fafb;
+            --item-border: #f3f4f6;
+            --btn-bg: #f3f4f6;
+            --btn-active: #e5e7eb;
+            --modal-bg: #ffffff;
             --success: #10b981;
             --danger: #ef4444;
             --whatsapp: #25D366;
         }
 
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-dark: #60a5fa;
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --day-header-bg: #374151;
+            --item-border: #374151;
+            --btn-bg: #374151;
+            --btn-active: #4b5563;
+            --modal-bg: #1f2937;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: var(--bg-color); 
-            margin: 0; 
-            padding: 0; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
         }
         
         /* Barra Superior */
@@ -45,7 +75,7 @@
             color: white; 
             padding: 16px 20px; 
             box-sizing: border-box; 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
             position: sticky;
             top: 0;
             z-index: 50;
@@ -60,9 +90,10 @@
             max-width: 650px;
             padding: 15px;
             box-sizing: border-box;
+            flex: 1;
         }
 
-        /* Controles (Botones de acción) */
+        /* Controles */
         .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
         .btn-action { 
             background-color: var(--primary); 
@@ -98,6 +129,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
             overflow: hidden;
+            transition: background-color 0.3s;
         }
         .week-header {
             background-color: var(--primary);
@@ -111,7 +143,7 @@
 
         /* Diseño de Días */
         .day-section {
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
         .day-section:last-child {
             border-bottom: none;
@@ -121,12 +153,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 20px;
-            background-color: #f9fafb;
+            background-color: var(--day-header-bg);
+            transition: background-color 0.3s;
         }
         .day-title {
             font-weight: 700;
             font-size: 1.05em;
-            color: var(--primary-dark);
+            color: var(--text-main);
         }
         .day-actions {
             display: flex;
@@ -143,17 +176,16 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            transition: background 0.2s;
         }
 
         /* Diseño de Oficinas */
         .office-item {
             padding: 15px 20px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid var(--item-border);
             display: flex;
             flex-direction: column;
             gap: 8px;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, border-color 0.3s;
         }
         .office-item:last-child {
             border-bottom: none;
@@ -177,11 +209,15 @@
         .badge-type {
             font-size: 0.7em;
             background-color: #e0e7ff;
-            color: var(--primary-dark);
+            color: #1e40af;
             padding: 3px 8px;
             border-radius: 12px;
             font-weight: 700;
             text-transform: uppercase;
+        }
+        [data-theme="dark"] .badge-type {
+            background-color: #3730a3;
+            color: #e0e7ff;
         }
         .btn-check {
             background-color: #fee2e2;
@@ -196,24 +232,24 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: background 0.2s;
         }
-        .btn-check:active { background-color: #fca5a5; }
+        [data-theme="dark"] .btn-check {
+            background-color: #7f1d1d;
+            color: #fca5a5;
+        }
         
         .address-btn {
             display: inline-flex;
             align-items: center;
-            background-color: #f3f4f6;
+            background-color: var(--btn-bg);
             color: var(--text-main);
             text-decoration: none;
             padding: 10px 12px;
             border-radius: 8px;
             font-size: 0.9em;
             font-weight: 500;
-            transition: background 0.2s;
             margin-top: 4px;
         }
-        .address-btn:active { background-color: #e5e7eb; }
         .address-icon { margin-left: auto; font-size: 1.2em; }
         .town-name {
             font-size: 0.8em;
@@ -228,19 +264,20 @@
             display: none; 
             position: fixed; 
             top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: rgba(0,0,0,0.5); 
+            background-color: rgba(0,0,0,0.6); 
             backdrop-filter: blur(4px);
             z-index: 1000; 
             justify-content: center; 
             align-items: center; 
         }
         .modal-content { 
-            background-color: white; 
+            background-color: var(--modal-bg); 
+            color: var(--text-main);
             width: 90%; 
             max-width: 400px; 
             border-radius: 16px; 
             padding: 24px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
             max-height: 80vh;
             overflow-y: auto;
         }
@@ -248,31 +285,47 @@
         
         .import-label { 
             display: block; 
-            background-color: #eff6ff; 
-            color: var(--primary); 
+            background-color: var(--btn-bg); 
+            color: var(--text-main); 
             padding: 20px; 
             text-align: center; 
             border-radius: 12px; 
             font-weight: 600; 
-            border: 2px dashed #93c5fd; 
+            border: 2px dashed var(--text-muted); 
             cursor: pointer; 
             margin-bottom: 20px; 
-            transition: background 0.2s;
         }
-        .import-label:active { background-color: #dbeafe; }
         .modal-content input[type="file"] { display: none; }
         
+        /* Modo Oscuro */
+        .theme-toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .theme-label { font-weight: 600; font-size: 1em; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
         /* Lista de días ocultos */
-        .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid #e5e7eb; padding-top: 15px;}
+        .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid var(--border-color); padding-top: 15px;}
         .hidden-item { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            background-color: #f9fafb; 
+            background-color: var(--btn-bg); 
             padding: 12px; 
             border-radius: 8px; 
             margin-bottom: 8px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
         }
         .btn-restore-day { 
             background-color: var(--primary); 
@@ -283,14 +336,11 @@
             font-weight: 600; 
             font-size: 0.8em;
             cursor: pointer;
-            white-space: nowrap;
-            margin-left: 10px;
         }
-        .btn-restore-day:active { background-color: var(--primary-dark); }
 
         .btn-close { 
             width: 100%; 
-            background-color: #f3f4f6; 
+            background-color: var(--btn-bg); 
             color: var(--text-main); 
             border: none; 
             padding: 14px; 
@@ -301,7 +351,7 @@
             margin-top: 15px;
         }
 
-        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
         #imageModal img { max-width: 100%; max-height: 80%; border-radius: 12px; }
     </style>
@@ -347,19 +397,40 @@
                 <div id="hiddenDaysList"></div>
             </div>
 
+            <!-- Interruptor Modo Oscuro -->
+            <div class="theme-toggle-container">
+                <span class="theme-label">🌙 Modo Oscuro</span>
+                <label class="switch">
+                    <input type="checkbox" id="themeToggle" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar Menú</button>
         </div>
     </div>
 
-    <!-- MODAL DE IMAGEN (Para iOS o fallback) -->
+    <!-- MODAL DE IMAGEN -->
     <div id="imageModal">
         <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
         <img id="generatedImage" src="" alt="Ruta">
-        <button class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px;" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
+        <button class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px; background-color: #fff; color: #333;" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
     </div>
 
     <script>
         let datosGlobales = [];
+
+        // --- LÓGICA DE MODO OSCURO ---
+        function toggleDarkMode() {
+            const isDark = document.getElementById('themeToggle').checked;
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
 
         // --- LÓGICA DE IMPORTACIÓN DE EXCEL ---
         function handleFileUpload(event) {
@@ -505,536 +576,17 @@
                     const query = encodeURIComponent(oficinasDia[0].direccion + ', ' + oficinasDia[0].poblacion);
 
                     dayHeader.innerHTML = `
-                        <span class="day-title">${dateCapitalized}</<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Rutas</title>
-    <!-- Librería para leer Excel -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Librería para descargar imagen -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                        <span class="day-title">${dateCapitalized}</span>
+                        <div class="day-actions" data-html2canvas-ignore="true">
+                            <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start">🚀 1º</a>
+                        </div>
+                    `;
+                    daySection.appendChild(dayHeader);
 
-        /* VARIABLES DE COLOR (MODO CLARO POR DEFECTO) */
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border-color: #e5e7eb;
-            --day-header-bg: #f9fafb;
-            --item-border: #f3f4f6;
-            --btn-bg: #f3f4f6;
-            --btn-active: #e5e7eb;
-            --modal-bg: #ffffff;
-            --success: #10b981;
-            --danger: #ef4444;
-            --whatsapp: #25D366;
-        }
-
-        /* VARIABLES DE COLOR (MODO OSCURO) */
-        [data-theme="dark"] {
-            --primary: #3b82f6;
-            --primary-dark: #60a5fa;
-            --bg-color: #111827;
-            --card-bg: #1f2937;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
-            --day-header-bg: #374151;
-            --item-border: #374151;
-            --btn-bg: #374151;
-            --btn-active: #4b5563;
-            --modal-bg: #1f2937;
-        }
-
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--bg-color); 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            color: var(--text-main);
-            transition: background-color 0.3s, color 0.3s;
-        }
-        
-        /* Barra Superior */
-        .top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%; 
-            max-width: 650px; 
-            background-color: var(--primary); 
-            color: white; 
-            padding: 16px 20px; 
-            box-sizing: border-box; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            transition: background-color 0.3s;
-        }
-        .app-title { font-weight: 700; font-size: 1.2em; letter-spacing: 0.5px; }
-        .btn-menu { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .btn-menu:active { background: rgba(255,255,255,0.4); }
-
-        /* Contenedor principal */
-        .main-content {
-            width: 100%;
-            max-width: 650px;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-
-        /* Controles (Botones de acción) */
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .btn-action { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 14px 10px; 
-            font-size: 14px; 
-            font-weight: 600; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            transition: transform 0.1s, background 0.2s;
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-        }
-        .btn-action:active { transform: scale(0.98); }
-        
-        .btn-download { background-color: var(--primary); }
-        .btn-download:active { background-color: var(--primary-dark); }
-        
-        .btn-share { background-color: var(--whatsapp); }
-        .btn-share:active { background-color: #128C7E; }
-
-        .btn-action:disabled { background-color: #9ca3af !important; cursor: not-allowed; }
-
-        /* Diseño de Tarjetas (Semanas) */
-        .week-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: background-color 0.3s;
-        }
-        .week-header {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 20px;
-            font-weight: 700;
-            font-size: 1em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Diseño de Días */
-        .day-section {
-            border-bottom: 1px solid var(--border-color);
-        }
-        .day-section:last-child {
-            border-bottom: none;
-        }
-        .day-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: var(--day-header-bg);
-            transition: background-color 0.3s;
-        }
-        .day-title {
-            font-weight: 700;
-            font-size: 1.05em;
-            color: var(--text-main);
-        }
-        .day-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-start {
-            background-color: var(--success);
-            color: white;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.8em;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: background 0.2s;
-        }
-
-        /* Diseño de Oficinas */
-        .office-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--item-border);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: opacity 0.3s, border-color 0.3s;
-        }
-        .office-item:last-child {
-            border-bottom: none;
-        }
-        .office-item.hidden {
-            display: none;
-        }
-        .office-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .office-name {
-            font-weight: 700;
-            font-size: 1em;
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.3;
-            padding-right: 10px;
-        }
-        .badge-type {
-            font-size: 0.7em;
-            background-color: #e0e7ff;
-            color: #1e40af;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        [data-theme="dark"] .badge-type {
-            background-color: #3730a3;
-            color: #e0e7ff;
-        }
-        .btn-check {
-            background-color: #fee2e2;
-            color: var(--danger);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-        [data-theme="dark"] .btn-check {
-            background-color: #7f1d1d;
-            color: #fca5a5;
-        }
-        .btn-check:active { opacity: 0.8; }
-        
-        .address-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--btn-bg);
-            color: var(--text-main);
-            text-decoration: none;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            font-weight: 500;
-            transition: background 0.2s;
-            margin-top: 4px;
-        }
-        .address-btn:active { background-color: var(--btn-active); }
-        .address-icon { margin-left: auto; font-size: 1.2em; }
-        .town-name {
-            font-size: 0.8em;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Menú Modal */
-        #modalMenu { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(4px);
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .modal-content { 
-            background-color: var(--modal-bg); 
-            color: var(--text-main);
-            width: 90%; 
-            max-width: 400px; 
-            border-radius: 16px; 
-            padding: 24px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
-            max-height: 80vh;
-            overflow-y: auto;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .modal-content h2 { margin-top: 0; color: var(--text-main); text-align: center; font-size: 1.3em; font-weight: 700; margin-bottom: 20px; }
-        
-        .import-label { 
-            display: block; 
-            background-color: var(--btn-bg); 
-            color: var(--text-main); 
-            padding: 20px; 
-            text-align: center; 
-            border-radius: 12px; 
-            font-weight: 600; 
-            border: 2px dashed var(--text-muted); 
-            cursor: pointer; 
-            margin-bottom: 20px; 
-            transition: background 0.2s, border-color 0.2s;
-        }
-        .import-label:active { background-color: var(--btn-active); }
-        .modal-content input[type="file"] { display: none; }
-        
-        /* Sección Modo Oscuro */
-        .theme-toggle-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-top: 1px solid var(--border-color);
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-        .theme-label { font-weight: 600; font-size: 1em; }
-        
-        /* Switch UI */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(22px); }
-        
-        /* Lista de días ocultos */
-        .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid var(--border-color); padding-top: 15px;}
-        .hidden-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background-color: var(--btn-bg); 
-            padding: 12px; 
-            border-radius: 8px; 
-            margin-bottom: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .btn-restore-day { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            font-size: 0.8em;
-            cursor: pointer;
-            white-space: nowrap;
-            margin-left: 10px;
-        }
-        .btn-restore-day:active { background-color: var(--primary-dark); }
-
-        .btn-close { 
-            width: 100%; 
-            background-color: var(--btn-bg); 
-            color: var(--text-main); 
-            border: none; 
-            padding: 14px; 
-            border-radius: 12px; 
-            font-weight: 700; 
-            font-size: 1em; 
-            cursor: pointer; 
-            margin-top: 15px;
-        }
-        .btn-close:active { background-color: var(--btn-active); }
-
-        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
-        #imageModal img { max-width: 100%; max-height: 80%; border-radius: 12px; }
-    </style>
-</head>
-<body>
-
-    <!-- BARRA SUPERIOR -->
-    <div class="top-bar">
-        <span class="app-title">Mis Rutas</span>
-        <button class="btn-menu" onclick="abrirMenu()">☰</button>
-    </div>
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="main-content">
-        <div class="controls" data-html2canvas-ignore="true">
-            <button id="downloadBtn" class="btn-action btn-download" onclick="descargarImagen()">📥 Descargar</button>
-            <button id="shareBtn" class="btn-action btn-share" onclick="compartirImagen()">📤 Compartir</button>
-        </div>
-
-        <div id="captureArea">
-            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);" id="emptyState">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <h3 style="margin: 0 0 10px 0;">Sin rutas cargadas</h3>
-                <p style="font-size: 0.9em;">Abre el menú superior e importa tu Excel para empezar.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- MENÚ MODAL -->
-    <div id="modalMenu">
-        <div class="modal-content">
-            <h2>Opciones</h2>
-            
-            <label for="fileInput" class="import-label">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                Importar Excel (.xlsx)
-            </label>
-            <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
-
-            <!-- Sección de días ocultos -->
-            <div id="hiddenDaysSection" style="display: none;">
-                <div class="hidden-list-title">Días con oficinas ocultas</div>
-                <div id="hiddenDaysList"></div>
-            </div>
-
-            <!-- Interruptor Modo Oscuro -->
-            <div class="theme-toggle-container">
-                <span class="theme-label">🌙 Modo Oscuro</span>
-                <label class="switch">
-                    <input type="checkbox" id="themeToggle" onchange="toggleDarkMode()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar Menú</button>
-        </div>
-    </div>
-
-    <!-- MODAL DE IMAGEN (Para iOS o fallback) -->
-    <div id="imageModal">
-        <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
-        <img id="generatedImage" src="" alt="Ruta">
-        <button class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px; background-color: #fff; color: #333;" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
-    </div>
-
-    <script>
-        let datosGlobales = [];
-
-        // --- LÓGICA DE MODO OSCURO ---
-        function toggleDarkMode() {
-            const isDark = document.getElementById('themeToggle').checked;
-            if (isDark) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            }
-        }
-
-        // --- LÓGICA DE IMPORTACIÓN DE EXCEL ---
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                procesarDatosExcel(json);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function procesarDatosExcel(rows) {
-            let oficinas = [];
-            let headers = [];
-            let headerRowIndex = -1;
-            
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
-                    headers = rows[i].map(h => String(h).toUpperCase().trim());
-                    headerRowIndex = i;
-                    break;
-                }
-            }
-
-            if (headerRowIndex === -1) {
-                alert("No se ha encontrado el formato correcto en el Excel.");
-                return;
-            }
-
-            const idxTecnico = headers.indexOf('TECNICO');
-            const idxFecha = headers.findIndex(h => h.includes('FECHA'));
-            const idxNombre = headers.indexOf('NOMBRE');
-            const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
-            const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
-            const idxTipo = headers.indexOf('TIPO');
-
-            for (let i = headerRowIndex + 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-
-                const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
-                const tipo = idxTipo !== -1 ? String(row[idxTipo]).toUpperCase().trim() : '';
-
-                let incluir = (idxTecnico !== -1) ? (tecnico === 'ERIK') : true;
-
-                if (incluir) {
-                    let fechaStr = "Sin Fecha";
-                    if (row[idxFecha]) {
-                        if (typeof row[idxFecha] === 'number') {
-                            const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
-                            fechaStr = dateObj.toISOString().split('T')[0];
-                        } else {
-                            fechaStr = String(row[idxFecha]).split(' ')[0];
-                        }
-                    }
-
-                    oficinas.push({
-                        id: 'ofi-' + Math.random().toString(36).substr(2, 9),
-                        fecha: fechaStr,
-                        nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
-          udes(ofi.id);
+                    oficinasDia.forEach(ofi => {
+                        const q = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
+                        const badge = ofi.tipo ? `<span class="badge-type">${ofi.tipo}</span>` : '';
+                        const isHidden = ocultosIds.includes(ofi.id);
                         
                         const officeEl = document.createElement('div');
                         officeEl.className = `office-item ${isHidden ? 'hidden' : ''}`;
@@ -1126,20 +678,27 @@
             document.getElementById('modalMenu').style.display = 'flex';
         }
 
-        // --- DESCARGA DE IMAGEN ---
-        function descargarImagen() {
-            const btn = document.getElementById('downloadBtn');
-            btn.innerText = "⏳ Generando...";
-            btn.disabled = true;
-
-            html2canvas(document.getElementById('captureArea'), {
+        // --- GENERACIÓN DE IMAGEN ---
+        function generarCanvas() {
+            const bgColor = getComputedStyle(document.body).backgroundColor;
+            
+            return html2canvas(document.getElementById('captureArea'), {
                 scale: 4,
-                backgroundColor: "#f3f4f6",
+                backgroundColor: bgColor,
                 useCORS: true,
                 ignoreElements: function(element) {
                     return element.hasAttribute('data-html2canvas-ignore') || element.tagName === 'BUTTON';
                 }
-            }).then(canvas => {
+            });
+        }
+
+        // --- DESCARGA DE IMAGEN ---
+        function descargarImagen() {
+            const btn = document.getElementById('downloadBtn');
+            btn.innerHTML = "⏳...";
+            btn.disabled = true;
+
+            generarCanvas().then(canvas => {
                 const dataUrl = canvas.toDataURL('image/png');
                 try {
                     let link = document.createElement('a');
@@ -1156,13 +715,51 @@
                     document.getElementById('generatedImage').src = dataUrl;
                     document.getElementById('imageModal').style.display = 'flex';
                 }
-                btn.innerText = "📥 Descargar Imagen";
+                btn.innerHTML = "📥 Descargar";
                 btn.disabled = false;
+            });
+        }
+
+        // --- COMPARTIR IMAGEN ---
+        function compartirImagen() {
+            const btn = document.getElementById('shareBtn');
+            btn.innerHTML = "⏳...";
+            btn.disabled = true;
+
+            generarCanvas().then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], 'Mi_Ruta.png', { type: 'image/png' });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: 'Mi Ruta',
+                            text: 'Aquí tienes mi planificación de ruta.'
+                        }).then(() => {
+                            btn.innerHTML = "📤 Compartir";
+                            btn.disabled = false;
+                        }).catch((error) => {
+                            console.log('Error al compartir', error);
+                            btn.innerHTML = "📤 Compartir";
+                            btn.disabled = false;
+                        });
+                    } else {
+                        alert("Tu móvil no soporta compartir directamente. Usa el botón 'Descargar'.");
+                        btn.innerHTML = "📤 Compartir";
+                        btn.disabled = false;
+                    }
+                }, 'image/png');
             });
         }
 
         // --- CARGAR DATOS AL INICIAR ---
         window.onload = function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeToggle').checked = true;
+            }
+
             const guardadas = localStorage.getItem('rutas_guardadas');
             if (guardadas) {
                 datosGlobales = JSON.parse(guardadas);
