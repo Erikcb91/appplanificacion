@@ -29,6 +29,16 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Instalar widget nativo de Android
+        run: |
+          APP=android/app/src/main
+          mkdir -p $APP/java/com/erik/rutas $APP/res/layout $APP/res/xml $APP/res/drawable
+          cp android-native/MainActivity.java android-native/RutasWidgetPlugin.java android-native/RutasWidgetProvider.java $APP/java/com/erik/rutas/
+          cp android-native/widget_rutas.xml $APP/res/layout/
+          cp android-native/rutas_widget_info.xml $APP/res/xml/
+          cp android-native/widget_bg.xml $APP/res/drawable/
+          python3 android-native/patch_manifest.py $APP/AndroidManifest.xml
+
       - name: Generate Static Keystore (Firma fija para actualizaciones)
         run: |
           keytool -genkeypair -v -keystore my-release-key.jks -alias myalias -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Erik, OU=Personal, O=App, L=Burgos, S=Burgos, C=ES"
