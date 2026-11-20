@@ -111,6 +111,68 @@
         
         /* Banner de error para debug */
         #errorBanner { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--danger); color: white; padding: 10px; text-align: center; font-weight: bold; z-index: 99999; }
+    
+        /* ===== Buscador ===== */
+        .search-box { position: relative; margin-bottom: 12px; }
+        .search-box input { width: 100%; box-sizing: border-box; padding: 12px 40px 12px 14px; font-size: 15px; font-family: inherit; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-bg); color: var(--text-main); outline: none; -webkit-appearance: none; appearance: none; }
+        .search-box input:focus { border-color: var(--primary); }
+        .search-box input::-webkit-search-cancel-button { display: none; }
+        .search-clear { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; color: var(--text-muted); cursor: pointer; width: 36px; height: 36px; display: none; }
+
+        /* ===== Selector de vista y navegación de días ===== */
+        .view-switch { display: flex; background-color: var(--btn-bg); border-radius: 12px; padding: 4px; margin-bottom: 12px; gap: 4px; }
+        .view-switch button { flex: 1; border: none; background: transparent; color: var(--text-muted); padding: 10px 8px; border-radius: 9px; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+        .view-switch button.active { background-color: var(--card-bg); color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+        .day-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .nav-btn { width: 44px; height: 44px; flex-shrink: 0; border: none; border-radius: 12px; background-color: var(--card-bg); color: var(--primary); font-size: 22px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        .nav-btn:disabled { opacity: 0.3; cursor: default; }
+        .nav-label { flex: 1; text-align: center; font-weight: 700; line-height: 1.25; }
+        .nav-label small { display: block; font-size: 0.72em; font-weight: 700; color: var(--primary); letter-spacing: 0.6px; }
+        .btn-hoy { height: 44px; flex-shrink: 0; border: none; border-radius: 12px; padding: 0 14px; background-color: var(--primary); color: white; font-weight: 700; font-size: 14px; font-family: inherit; cursor: pointer; }
+
+        /* ===== Resumen ===== */
+        .resumen { background-color: var(--card-bg); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .resumen-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+        .resumen-titulo { font-weight: 700; }
+        .resumen-num { font-weight: 700; color: var(--primary); font-size: 0.95em; }
+        .progress { height: 8px; background-color: var(--btn-bg); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+        .progress > span { display: block; height: 100%; background-color: var(--success); border-radius: 99px; transition: width 0.3s; }
+        .resumen-extra { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.82em; color: var(--text-muted); margin-bottom: 8px; }
+        .resumen-next { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.92em; color: var(--text-muted); }
+        .resumen-next strong { color: var(--text-main); }
+        .resumen-next.ok { color: var(--success); font-weight: 700; }
+
+        /* ===== Visitada / Mañana ===== */
+        .office-side { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+        .btn-visit { background-color: #dcfce7; color: #15803d; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .btn-visit.on { background-color: var(--success); color: white; }
+        [data-theme="dark"] .btn-visit { background-color: #14532d; color: #86efac; }
+        [data-theme="dark"] .btn-visit.on { background-color: var(--success); color: white; }
+        .office-item.visited .office-name { text-decoration: line-through; opacity: 0.55; }
+        .office-item.visited .address-btn, .office-item.visited .town-name { opacity: 0.55; }
+        .visit-time { font-size: 0.8em; color: var(--success); font-weight: 700; }
+        .chip { font-size: 0.75em; font-weight: 700; padding: 4px 8px; border-radius: 12px; background-color: var(--btn-bg); color: var(--text-muted); }
+        .chip.ok { background-color: #dcfce7; color: #15803d; }
+        [data-theme="dark"] .chip.ok { background-color: #14532d; color: #86efac; }
+
+        /* Botón sutil de "mañana" y fondo amarillo suave */
+        .btn-manana { background: transparent; color: var(--text-muted); border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 15px; line-height: 1; opacity: 0.45; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.2s, background 0.2s; }
+        .btn-manana:active { opacity: 1; }
+        .btn-manana.on { opacity: 1; color: #b45309; background-color: rgba(245, 190, 40, 0.22); }
+        .office-item.manana { background-color: #fff9db; }
+        [data-theme="dark"] .office-item.manana { background-color: #3b3719; }
+        [data-theme="dark"] .btn-manana.on { color: #fcd34d; background-color: rgba(252, 211, 77, 0.16); }
+        .tag-manana { font-size: 0.78em; font-weight: 700; color: #b45309; }
+        [data-theme="dark"] .tag-manana { color: #fcd34d; }
+
+        /* ===== Selector de exportación ===== */
+        #modalExport { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
+        .export-option { display: block; width: 100%; text-align: left; background-color: var(--btn-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
+        .export-option span { display: block; font-size: 0.82em; color: var(--text-muted); margin-top: 2px; }
+
+        /* Área oculta donde se dibuja lo que se exporta como imagen */
+        #exportArea { position: fixed; left: -10000px; top: 0; width: 520px; padding: 12px; box-sizing: border-box; background-color: var(--bg-color); color: var(--text-main); font-family: inherit; }
     </style>
 </head>
 <body>
@@ -124,19 +186,35 @@
     </div>
 
     <div class="main-content">
-        <div class="controls" data-html2canvas-ignore="true">
+        <div class="controls">
             <button id="btnDownload" class="btn-action btn-download">📥 Descargar</button>
             <button id="btnShare" class="btn-action btn-share">📤 Compartir</button>
         </div>
 
-        <div id="captureArea">
-            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);" id="emptyState">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <h3 style="margin: 0 0 10px 0;">Sin rutas cargadas</h3>
-                <p style="font-size: 0.9em;">Abre el menú superior e importa tu Excel para empezar.</p>
-            </div>
+        <div class="search-box" id="searchBox" style="display:none;">
+            <input type="search" id="buscador" placeholder="🔍 Buscar oficina, calle o población" autocomplete="off">
+            <button id="btnLimpiarBusqueda" class="search-clear" aria-label="Borrar búsqueda">✕</button>
         </div>
+
+        <div class="view-switch" id="viewSwitch" style="display:none;">
+            <button data-vista="dia" class="active">📅 Día</button>
+            <button data-vista="todo">🗂 Todos los días</button>
+        </div>
+
+        <div class="day-nav" id="dayNav" style="display:none;">
+            <button id="btnDiaPrev" class="nav-btn" aria-label="Día anterior">‹</button>
+            <div class="nav-label" id="navLabel"></div>
+            <button id="btnDiaNext" class="nav-btn" aria-label="Día siguiente">›</button>
+            <button id="btnHoy" class="btn-hoy">Hoy</button>
+        </div>
+
+        <div id="resumenDia"></div>
+
+        <div id="captureArea"></div>
     </div>
+
+    <!-- Área oculta para generar las imágenes -->
+    <div id="exportArea" aria-hidden="true"></div>
 
     <div id="modalMenu">
         <div class="modal-content">
@@ -163,6 +241,14 @@
         </div>
     </div>
 
+    <div id="modalExport">
+        <div class="modal-content">
+            <h2 id="exportTitulo">¿Qué quieres compartir?</h2>
+            <div id="exportOpciones"></div>
+            <button id="btnCerrarExport" class="btn-close">Cancelar</button>
+        </div>
+    </div>
+
     <div id="imageModal">
         <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
         <img id="generatedImage" src="" alt="Ruta">
@@ -171,54 +257,322 @@
 
     <script>
         // --- BANNER DE ERRORES PARA DEBUG ---
-        window.onerror = function(msg, url, line, col, error) {
+        window.onerror = function(msg, url, line) {
             const banner = document.getElementById('errorBanner');
             banner.style.display = 'block';
             banner.innerText = "Error app: " + msg + " (Línea " + line + ")";
             return false;
         };
 
-        let datosGlobales = [];
+        const $ = (id) => document.getElementById(id);
 
-        // Se ejecuta cuando todo el HTML ha cargado
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // Asignar eventos
-            document.getElementById('btnMenu').addEventListener('click', abrirMenu);
-            document.getElementById('btnCloseMenu').addEventListener('click', cerrarMenu);
-            document.getElementById('btnDownload').addEventListener('click', descargarImagen);
-            document.getElementById('btnShare').addEventListener('click', compartirImagen);
-            document.getElementById('btnCloseImage').addEventListener('click', () => {
-                document.getElementById('imageModal').style.display = 'none';
+        const ESTADO_VACIO = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <h3 style="margin: 0 0 10px 0;">Sin rutas cargadas</h3>
+                <p style="font-size: 0.9em;">Abre el menú superior e importa tu Excel para empezar.</p>
+            </div>`;
+
+        // --- ESTADO ---
+        let datosGlobales = [];   // oficinas importadas
+        let ocultos = [];         // ids ocultos (✕)
+        let visitadas = {};       // id -> hora "HH:MM"
+        let mananas = {};         // id -> 1 (hay que hacerla por la mañana)
+        let vista = 'dia';        // 'dia' | 'todo'
+        let diaSel = '';          // día mostrado en la vista Día (AAAA-MM-DD)
+        let query = '';           // texto del buscador
+        let opcionesExport = [];
+        let accionExport = 'compartir';
+
+        function leerJSON(clave, defecto) {
+            try { const v = JSON.parse(localStorage.getItem(clave)); return v == null ? defecto : v; }
+            catch (e) { return defecto; }
+        }
+        function guardarJSON(clave, valor) {
+            try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
+        }
+
+        // --- UTILIDADES ---
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+        function isoLocal(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        const hoyIso = () => isoLocal(new Date());
+
+        // Acepta AAAA-MM-DD y DD/MM/AAAA; devuelve una fecha local o null
+        function parseFecha(str) {
+            str = String(str);
+            let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(str);
+            if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+            m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(str);
+            if (m) return new Date(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
+            return null;
+        }
+        function fechaIso(o) {
+            const d = parseFecha(o.fecha);
+            return d ? isoLocal(d) : null;
+        }
+        const fmtCorta = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+        function nombreDia(d) {
+            const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            return t.charAt(0).toUpperCase() + t.slice(1);
+        }
+        function wazeUrl(o) {
+            const destino = [o.direccion, o.poblacion].filter(Boolean).join(', ');
+            return 'https://waze.com/ul?q=' + encodeURIComponent(destino) + '&navigate=yes';
+        }
+        function hashId(txt) {
+            let h = 5381;
+            for (let i = 0; i < txt.length; i++) h = ((h << 5) + h + txt.charCodeAt(i)) | 0;
+            return (h >>> 0).toString(36);
+        }
+        function asegurarId(o) {
+            if (!o.id) o.id = 'ofi-' + hashId(o.fecha + '|' + o.nombre + '|' + o.direccion);
+            return o;
+        }
+
+        // --- DÍAS DISPONIBLES / NAVEGACIÓN ---
+        function diasDisponibles() {
+            const s = new Set();
+            datosGlobales.forEach(o => {
+                if (ocultos.includes(o.id)) return;
+                const f = fechaIso(o);
+                if (f) s.add(f);
             });
-            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
-            document.getElementById('themeToggle').addEventListener('change', toggleDarkMode);
+            return [...s].sort();
+        }
+        function diaPorDefecto() {
+            const hoy = hoyIso();
+            const dias = diasDisponibles();
+            if (dias.includes(hoy)) return hoy;
+            return dias.find(d => d > hoy) || dias[dias.length - 1] || hoy;
+        }
+        function moverDia(dir) {
+            const dias = diasDisponibles();
+            const destino = dir < 0 ? [...dias].reverse().find(d => d < diaSel) : dias.find(d => d > diaSel);
+            if (destino) { diaSel = destino; renderizar(); }
+        }
 
-            // Cargar preferencias y datos
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.getElementById('themeToggle').checked = true;
-            }
-            
-            const guardadas = localStorage.getItem('rutas_guardadas');
-            if (guardadas) {
-                try {
-                    datosGlobales = JSON.parse(guardadas);
-                    renderizarRutas();
-                } catch(e) {}
-            }
-        });
+        // --- AGRUPACIÓN ---
+        function agrupar(lista) {
+            const semanas = {};
+            const sinFecha = {};
+            lista.forEach(o => {
+                const iso = fechaIso(o);
+                if (!iso) { (sinFecha[o.fecha] = sinFecha[o.fecha] || []).push(o); return; }
+                const d = parseFecha(iso);
+                const dow = d.getDay();
+                const lunes = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (dow === 0 ? 6 : dow - 1));
+                const k = isoLocal(lunes);
+                if (!semanas[k]) {
+                    semanas[k] = { inicio: lunes, fin: new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6), dias: {} };
+                }
+                (semanas[k].dias[iso] = semanas[k].dias[iso] || []).push(o);
+            });
+            return { semanas, sinFecha };
+        }
 
-        // --- LÓGICA DEL MENÚ ---
+        // --- HTML ---
+        function htmlOficina(o, interactivo) {
+            const hora = visitadas[o.id];
+            const esManana = !!mananas[o.id];
+            const badge = o.tipo ? `<span class="badge-type">${esc(o.tipo)}</span>` : '';
+            const botones = interactivo ? `
+                <button class="btn-manana${esManana ? ' on' : ''}" data-manana="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar para la mañana" title="Por la mañana">☀</button>
+                <button class="btn-visit${hora ? ' on' : ''}" data-visitar="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar como visitada" title="Visitada">✓</button>
+                <button class="btn-check" data-ocultar="${o.id}" data-html2canvas-ignore="true" aria-label="Ocultar oficina" title="Ocultar">✕</button>` : '';
+            const direccion = o.direccion
+                ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
+                : '';
+            const poblacion = o.poblacion ? `<span class="town-name">${esc(o.poblacion)}</span>` : '';
+            const marcas = (esManana ? `<span class="tag-manana">☀ Por la mañana</span> ` : '') +
+                           (hora ? `<span class="visit-time">✓ Visitada a las ${esc(hora)}</span>` : '');
+            return `
+                <div class="office-item${hora ? ' visited' : ''}${esManana ? ' manana' : ''}" id="${o.id}">
+                    <div class="office-info">
+                        <h4 class="office-name">${esc(o.nombre)}</h4>
+                        <div class="office-side">${badge}${botones}</div>
+                    </div>
+                    ${direccion}
+                    ${poblacion}
+                    ${marcas ? `<div>${marcas}</div>` : ''}
+                </div>`;
+        }
+
+        function htmlDia(titulo, oficinas, interactivo) {
+            if (!oficinas.length) return '';
+            const hechas = oficinas.filter(o => visitadas[o.id]).length;
+            const pend = oficinas.find(o => !visitadas[o.id]);
+            let acciones = `<span class="chip${hechas === oficinas.length ? ' ok' : ''}">${hechas}/${oficinas.length}</span>`;
+            if (interactivo && pend) {
+                acciones += `<a class="btn-start" href="${wazeUrl(pend)}" target="_blank" rel="noopener" data-html2canvas-ignore="true">🚀 ${hechas ? 'Siguiente' : 'Ir al 1º'}</a>`;
+            }
+            return `
+                <div class="day-section">
+                    <div class="day-header">
+                        <span class="day-title">${esc(titulo)}</span>
+                        <div class="day-actions">${acciones}</div>
+                    </div>
+                    ${oficinas.map(o => htmlOficina(o, interactivo)).join('')}
+                </div>`;
+        }
+
+        function htmlSemana(sem, interactivo) {
+            const dias = Object.keys(sem.dias).sort()
+                .map(f => htmlDia(nombreDia(parseFecha(f)), sem.dias[f], interactivo)).join('');
+            if (!dias) return '';
+            return `
+                <div class="week-card">
+                    <div class="week-header">Semana del ${fmtCorta(sem.inicio)} al ${fmtCorta(sem.fin)}</div>
+                    ${dias}
+                </div>`;
+        }
+
+        function htmlAgrupado(g, interactivo) {
+            let h = Object.keys(g.semanas).sort().map(k => htmlSemana(g.semanas[k], interactivo)).join('');
+            const sf = Object.keys(g.sinFecha).sort().map(f => htmlDia(f, g.sinFecha[f], interactivo)).join('');
+            if (sf) h += `<div class="week-card"><div class="week-header">Sin fecha</div>${sf}</div>`;
+            return h;
+        }
+
+        function htmlResumen(lista, modo) {
+            const total = lista.length;
+            if (!total) return '';
+            const hechas = lista.filter(o => visitadas[o.id]).length;
+            const pct = Math.round(hechas / total * 100);
+            const ordenada = lista.slice().sort((a, b) => (fechaIso(a) || '9999').localeCompare(fechaIso(b) || '9999'));
+            const sig = ordenada.find(o => !visitadas[o.id]);
+            const titulo = modo === 'busqueda' ? `${total} resultado${total > 1 ? 's' : ''}`
+                         : modo === 'dia' ? 'Resumen del día' : 'Resumen total';
+            const horas = lista.map(o => visitadas[o.id]).filter(Boolean).sort();
+            const pendManana = lista.filter(o => mananas[o.id] && !visitadas[o.id]).length;
+
+            let extra = '';
+            if (modo === 'dia' && horas.length) extra += `<span>Primera ${esc(horas[0])} · Última ${esc(horas[horas.length - 1])}</span>`;
+            if (pendManana) extra += `<span>☀ ${pendManana} por la mañana</span>`;
+
+            let siguiente;
+            if (!sig) {
+                siguiente = `<div class="resumen-next ok">✓ ¡Todo visitado!</div>`;
+            } else {
+                const iso = fechaIso(sig);
+                const cuando = (modo !== 'dia' && iso) ? ` (${fmtCorta(parseFecha(iso))})` : '';
+                siguiente = `
+                    <div class="resumen-next">
+                        <span>${modo === 'dia' ? 'Próxima' : 'Siguiente'}: <strong>${esc(sig.nombre)}</strong>${sig.poblacion ? ' · ' + esc(sig.poblacion) : ''}${cuando}</span>
+                        <a class="btn-start" href="${wazeUrl(sig)}" target="_blank" rel="noopener">🚀 Ir</a>
+                    </div>`;
+            }
+            return `
+                <div class="resumen">
+                    <div class="resumen-top">
+                        <span class="resumen-titulo">${titulo}</span>
+                        <span class="resumen-num">${hechas} de ${total} visitadas</span>
+                    </div>
+                    <div class="progress"><span style="width:${pct}%"></span></div>
+                    ${extra ? `<div class="resumen-extra">${extra}</div>` : ''}
+                    ${siguiente}
+                </div>`;
+        }
+
+        // --- RENDERIZADO PRINCIPAL ---
+        function renderizar() {
+            const cont = $('captureArea');
+            const vacio = datosGlobales.length === 0;
+
+            $('searchBox').style.display = vacio ? 'none' : 'block';
+            if (vacio) {
+                $('viewSwitch').style.display = 'none';
+                $('dayNav').style.display = 'none';
+                $('resumenDia').innerHTML = '';
+                cont.innerHTML = ESTADO_VACIO;
+                return;
+            }
+
+            let lista = datosGlobales.filter(o => !ocultos.includes(o.id));
+            const buscando = query.trim() !== '';
+            if (buscando) {
+                const q = norm(query.trim());
+                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.tipo, o.fecha].join(' ')).includes(q));
+            }
+            const modoDia = !buscando && vista === 'dia';
+            if (modoDia) lista = lista.filter(o => fechaIso(o) === diaSel);
+
+            $('btnLimpiarBusqueda').style.display = buscando ? 'block' : 'none';
+            $('viewSwitch').style.display = buscando ? 'none' : 'flex';
+            document.querySelectorAll('#viewSwitch button').forEach(b => b.classList.toggle('active', b.dataset.vista === vista));
+
+            // Navegación de días (solo vista Día)
+            $('dayNav').style.display = modoDia ? 'flex' : 'none';
+            if (modoDia) {
+                const dias = diasDisponibles();
+                const d = parseFecha(diaSel);
+                $('navLabel').innerHTML = (diaSel === hoyIso() ? '<small>HOY</small>' : '') + esc(d ? nombreDia(d) : diaSel);
+                $('btnDiaPrev').disabled = !dias.some(x => x < diaSel);
+                $('btnDiaNext').disabled = !dias.some(x => x > diaSel);
+                $('btnHoy').style.display = diaSel === hoyIso() ? 'none' : 'block';
+            }
+
+            const modo = buscando ? 'busqueda' : (modoDia ? 'dia' : 'todo');
+            $('resumenDia').innerHTML = htmlResumen(lista, modo);
+
+            if (lista.length === 0) {
+                let msg;
+                if (buscando) msg = `Sin resultados para «${esc(query.trim())}»`;
+                else if (modoDia) msg = diaSel === hoyIso() ? 'Hoy no tienes oficinas 🎉' : 'No hay oficinas este día';
+                else msg = 'Todas las oficinas están ocultas. Abre el menú para restaurarlas.';
+                cont.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);"><p style="margin:0;">${msg}</p></div>`;
+                return;
+            }
+
+            if (modoDia) {
+                const d = parseFecha(diaSel);
+                cont.innerHTML = `<div class="week-card">${htmlDia(nombreDia(d), lista, true)}</div>`;
+            } else {
+                cont.innerHTML = htmlAgrupado(agrupar(lista), true);
+            }
+        }
+
+        // Guarda, repinta y avisa al widget tras cualquier cambio
+        function cambio() {
+            guardarJSON('oficinas_ocultas', ocultos);
+            guardarJSON('oficinas_visitadas', visitadas);
+            guardarJSON('oficinas_manana', mananas);
+            renderizar();
+            actualizarWidget();
+            if ($('modalMenu').style.display === 'flex') actualizarListaDiasOcultos();
+        }
+
+        // --- ACCIONES SOBRE OFICINAS ---
+        function alternarVisitada(id) {
+            if (visitadas[id]) delete visitadas[id];
+            else visitadas[id] = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            cambio();
+        }
+        function alternarManana(id) {
+            if (mananas[id]) delete mananas[id]; else mananas[id] = 1;
+            cambio();
+        }
+        function ocultarOficina(id) {
+            if (!ocultos.includes(id)) ocultos.push(id);
+            cambio();
+        }
+        function restaurarDia(fecha) {
+            const ids = datosGlobales.filter(o => fechaIso(o) === fecha || o.fecha === fecha).map(o => o.id);
+            ocultos = ocultos.filter(id => !ids.includes(id));
+            cambio();
+        }
+
+        // --- MENÚ ---
         function abrirMenu() {
-            document.getElementById('modalMenu').style.display = 'flex';
+            $('modalMenu').style.display = 'flex';
             actualizarListaDiasOcultos();
         }
-
-        function cerrarMenu() {
-            document.getElementById('modalMenu').style.display = 'none';
-        }
+        function cerrarMenu() { $('modalMenu').style.display = 'none'; }
 
         function toggleDarkMode(e) {
             if (e.target.checked) {
@@ -230,263 +584,16 @@
             }
         }
 
-        // --- LECTURA DE EXCEL ---
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (typeof XLSX === 'undefined') {
-                alert("La librería para leer Excel no se ha cargado. Revisa tu conexión a internet.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                    procesarDatosExcel(json);
-                } catch(err) {
-                    alert("Error al procesar el archivo. Asegúrate de que es un Excel válido.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function procesarDatosExcel(rows) {
-            let oficinas = [];
-            let headers = [];
-            let headerRowIndex = -1;
-            
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
-                    headers = rows[i].map(h => String(h).toUpperCase().trim());
-                    headerRowIndex = i;
-                    break;
-                }
-            }
-
-            if (headerRowIndex === -1) {
-                alert("No se ha encontrado el formato correcto en el Excel.");
-                return;
-            }
-
-            const idxTecnico = headers.indexOf('TECNICO');
-            const idxFecha = headers.findIndex(h => h.includes('FECHA'));
-            const idxNombre = headers.indexOf('NOMBRE');
-            const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
-            const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
-            const idxTipo = headers.indexOf('TIPO');
-
-            for (let i = headerRowIndex + 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-
-                const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
-                const tipo = idxTipo !== -1 ? String(row[idxTipo]).toUpperCase().trim() : '';
-
-                let incluir = (idxTecnico !== -1) ? (tecnico === 'ERIK') : true;
-
-                if (incluir) {
-                    let fechaStr = "Sin Fecha";
-                    if (row[idxFecha]) {
-                        if (typeof row[idxFecha] === 'number') {
-                            const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
-                            fechaStr = dateObj.toISOString().split('T')[0];
-                        } else {
-                            fechaStr = String(row[idxFecha]).split(' ')[0];
-                        }
-                    }
-
-                    oficinas.push({
-                        id: 'ofi-' + Math.random().toString(36).substr(2, 9),
-                        fecha: fechaStr,
-                        nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
-                        direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
-                        poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
-                        tipo: tipo
-                    });
-                }
-            }
-
-            if (oficinas.length > 0) {
-                datosGlobales = oficinas;
-                localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
-                localStorage.removeItem('oficinas_ocultas');
-                cerrarMenu();
-                renderizarRutas();
-            } else {
-                alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
-            }
-        }
-
-        // --- RENDERIZADO ---
-        function renderizarRutas() {
-            if (datosGlobales.length === 0) return;
-
-            const agrupadasPorFecha = {};
-            datosGlobales.forEach(o => {
-                if (!agrupadasPorFecha[o.fecha]) agrupadasPorFecha[o.fecha] = [];
-                agrupadasPorFecha[o.fecha].push(o);
-            });
-
-            const fechasOrdenadas = Object.keys(agrupadasPorFecha).sort();
-            const semanas = {};
-            const sinFecha = {};   // días cuya fecha no se pudo interpretar
-
-            fechasOrdenadas.forEach(fechaStr => {
-                const date = parseFecha(fechaStr);
-                if (!date) { sinFecha[fechaStr] = agrupadasPorFecha[fechaStr]; return; }
-                const day = date.getDay();
-                const lunes = new Date(date.getFullYear(), date.getMonth(), date.getDate() - (day === 0 ? 6 : day - 1));
-                const weekKey = isoLocal(lunes);
-
-                if (!semanas[weekKey]) {
-                    semanas[weekKey] = { inicio: lunes, fin: new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6), dias: {} };
-                }
-                semanas[weekKey].dias[fechaStr] = agrupadasPorFecha[fechaStr];
-            });
-
-            const container = document.getElementById('captureArea');
-            container.innerHTML = ''; 
-            const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-            const nombreDia = (d) => {
-                const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-                return t.charAt(0).toUpperCase() + t.slice(1);
-            };
-
-            const wazeUrl = (o) => {
-                const destino = [o.direccion, o.poblacion].filter(Boolean).join(', ');
-                return 'https://waze.com/ul?q=' + encodeURIComponent(destino) + '&navigate=yes';
-            };
-
-            const htmlOficina = (o) => {
-                const badge = o.tipo ? `<span class="badge-type">${esc(o.tipo)}</span>` : '';
-                const direccion = o.direccion
-                    ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
-                    : '';
-                const poblacion = o.poblacion ? `<span class="town-name">${esc(o.poblacion)}</span>` : '';
-                return `
-                    <div class="office-item" id="${o.id}">
-                        <div class="office-info">
-                            <h4 class="office-name">${esc(o.nombre)}</h4>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                ${badge}
-                                <button class="btn-check" data-ocultar="${o.id}" data-html2canvas-ignore="true" aria-label="Ocultar oficina">✕</button>
-                            </div>
-                        </div>
-                        ${direccion}
-                        ${poblacion}
-                    </div>`;
-            };
-
-            // Devuelve el HTML de un día, o '' si todas sus oficinas están ocultas
-            const htmlDia = (titulo, oficinas) => {
-                const visibles = oficinas.filter(o => !ocultosIds.includes(o.id));
-                if (visibles.length === 0) return '';
-                const ir = `<a class="btn-start" href="${wazeUrl(visibles[0])}" target="_blank" rel="noopener" data-html2canvas-ignore="true">🚀 Ir al 1º</a>`;
-                return `
-                    <div class="day-section">
-                        <div class="day-header">
-                            <span class="day-title">${esc(titulo)}</span>
-                            <div class="day-actions">${ir}</div>
-                        </div>
-                        ${visibles.map(htmlOficina).join('')}
-                    </div>`;
-            };
-
-            let html = '';
-
-            Object.keys(semanas).sort().forEach(weekKey => {
-                const sem = semanas[weekKey];
-                const dias = Object.keys(sem.dias).sort()
-                    .map(f => htmlDia(nombreDia(parseFecha(f)), sem.dias[f]))
-                    .join('');
-                if (!dias) return;
-                html += `
-                    <div class="week-card">
-                        <div class="week-header">Semana del ${formatDate(sem.inicio)} al ${formatDate(sem.fin)}</div>
-                        ${dias}
-                    </div>`;
-            });
-
-            const diasSinFecha = Object.keys(sinFecha).sort()
-                .map(f => htmlDia(f, sinFecha[f]))
-                .join('');
-            if (diasSinFecha) {
-                html += `
-                    <div class="week-card">
-                        <div class="week-header">Sin fecha</div>
-                        ${diasSinFecha}
-                    </div>`;
-            }
-
-            if (!html) {
-                html = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
-                            <h3 style="margin:0 0 10px 0;">Todas las oficinas están ocultas</h3>
-                            <p style="font-size:0.9em;">Abre el menú para restaurar los días.</p>
-                        </div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // --- UTILIDADES ---
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        }
-
-        function isoLocal(d) {
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            return d.getFullYear() + '-' + mm + '-' + dd;
-        }
-
-        // Acepta AAAA-MM-DD y DD/MM/AAAA; devuelve una fecha local o null
-        function parseFecha(str) {
-            let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(str);
-            if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
-            m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(str);
-            if (m) return new Date(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
-            return null;
-        }
-
-        function leerOcultos() {
-            try { return JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]'); }
-            catch (e) { return []; }
-        }
-
-        // --- OCULTAR / RESTAURAR ---
-        function ocultarOficina(id) {
-            const ocultos = leerOcultos();
-            if (!ocultos.includes(id)) ocultos.push(id);
-            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
-            renderizarRutas();
-        }
-
-        function restaurarDia(fecha) {
-            const idsDelDia = datosGlobales.filter(o => o.fecha === fecha).map(o => o.id);
-            const ocultos = leerOcultos().filter(id => !idsDelDia.includes(id));
-            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
-            renderizarRutas();
-            actualizarListaDiasOcultos();
-        }
-
         function actualizarListaDiasOcultos() {
-            const ocultos = leerOcultos();
             const porDia = {};
             datosGlobales.forEach(o => {
-                if (ocultos.includes(o.id)) porDia[o.fecha] = (porDia[o.fecha] || 0) + 1;
+                if (!ocultos.includes(o.id)) return;
+                const k = fechaIso(o) || o.fecha;
+                porDia[k] = (porDia[k] || 0) + 1;
             });
-
             const fechas = Object.keys(porDia).sort();
-            const seccion = document.getElementById('hiddenDaysSection');
-            const lista = document.getElementById('hiddenDaysList');
-
-            seccion.style.display = fechas.length ? 'block' : 'none';
-            lista.innerHTML = fechas.map(f => {
+            $('hiddenDaysSection').style.display = fechas.length ? 'block' : 'none';
+            $('hiddenDaysList').innerHTML = fechas.map(f => {
                 const d = parseFecha(f);
                 const etiqueta = d ? d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }) : f;
                 const n = porDia[f];
@@ -498,29 +605,195 @@
             }).join('');
         }
 
-        // --- IMAGEN: DESCARGAR / COMPARTIR ---
-        const esNativo = () => !!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform());
-        const plugin = (nombre) => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins[nombre]) || null;
-        const nombreArchivo = () => 'Mi_Ruta_' + isoLocal(new Date()) + '.png';
+        // --- LECTURA DE EXCEL ---
+        function handleFileUpload(event) {
+            const input = event.target;
+            const file = input.files[0];
+            if (!file) return;
 
-        async function generarImagen() {
+            if (typeof XLSX === 'undefined') {
+                alert("La librería para leer Excel no se ha cargado. Revisa tu conexión a internet.");
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    procesarDatosExcel(json);
+                } catch (err) {
+                    alert("Error al procesar el archivo. Asegúrate de que es un Excel válido.");
+                }
+                input.value = '';   // permite volver a importar el mismo archivo
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function procesarDatosExcel(rows) {
+            const oficinas = [];
+            let headers = [];
+            let headerRowIndex = -1;
+
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
+                    headers = rows[i].map(h => String(h).toUpperCase().trim());
+                    headerRowIndex = i;
+                    break;
+                }
+            }
+            if (headerRowIndex === -1) {
+                alert("No se ha encontrado el formato correcto en el Excel.");
+                return;
+            }
+
+            const idxTecnico = headers.indexOf('TECNICO');
+            const idxFecha = headers.findIndex(h => h.includes('FECHA'));
+            const idxNombre = headers.indexOf('NOMBRE');
+            const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
+            const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
+            const idxTipo = headers.indexOf('TIPO');
+            const usados = {};
+
+            for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
+                const tipo = idxTipo !== -1 && row[idxTipo] ? String(row[idxTipo]).toUpperCase().trim() : '';
+                const incluir = (idxTecnico !== -1) ? (tecnico === 'ERIK') : true;
+                if (!incluir) continue;
+
+                let fechaStr = "Sin Fecha";
+                if (idxFecha !== -1 && row[idxFecha]) {
+                    if (typeof row[idxFecha] === 'number') {
+                        const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
+                        fechaStr = dateObj.toISOString().split('T')[0];
+                    } else {
+                        fechaStr = String(row[idxFecha]).split(' ')[0];
+                    }
+                }
+
+                const o = {
+                    fecha: fechaStr,
+                    nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
+                    direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
+                    poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
+                    tipo: tipo
+                };
+                asegurarId(o);
+                usados[o.id] = (usados[o.id] || 0) + 1;
+                if (usados[o.id] > 1) o.id += '-' + usados[o.id];
+                oficinas.push(o);
+            }
+
+            if (oficinas.length === 0) {
+                alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
+                return;
+            }
+
+            datosGlobales = oficinas;
+            guardarJSON('rutas_guardadas', oficinas);
+            // Conserva las marcas de las oficinas que siguen en el Excel nuevo
+            const ids = new Set(oficinas.map(o => o.id));
+            ocultos = ocultos.filter(id => ids.has(id));
+            Object.keys(visitadas).forEach(id => { if (!ids.has(id)) delete visitadas[id]; });
+            Object.keys(mananas).forEach(id => { if (!ids.has(id)) delete mananas[id]; });
+            diaSel = diaPorDefecto();
+            query = '';
+            $('buscador').value = '';
+            cerrarMenu();
+            cambio();
+        }
+
+        // --- EXPORTAR COMO IMAGEN (día / semana / todo) ---
+        const esNativo = () => !!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform());
+        function plugin(nombre) {
+            if (!window.Capacitor) return null;
+            if (Capacitor.Plugins && Capacitor.Plugins[nombre]) return Capacitor.Plugins[nombre];
+            try { return typeof Capacitor.registerPlugin === 'function' ? Capacitor.registerPlugin(nombre) : null; }
+            catch (e) { return null; }
+        }
+
+        function abrirExportar(accion) {
+            const lista = datosGlobales.filter(o => !ocultos.includes(o.id));
+            if (!lista.length) { alert('No hay rutas para exportar. Importa un Excel primero.'); return; }
+            accionExport = accion;
+            $('exportTitulo').textContent = accion === 'descargar' ? '¿Qué quieres descargar?' : '¿Qué quieres compartir?';
+
+            const opciones = [];
+            const delDia = lista.filter(o => fechaIso(o) === diaSel);
+            if (delDia.length) {
+                opciones.push({ tipo: 'dia', clave: diaSel, titulo: '📅 Solo este día',
+                                sub: nombreDia(parseFecha(diaSel)) + ' · ' + delDia.length + ' oficina' + (delDia.length > 1 ? 's' : '') });
+            }
+            const g = agrupar(lista);
+            const hoy = hoyIso();
+            Object.keys(g.semanas).sort().forEach(k => {
+                const s = g.semanas[k];
+                const n = Object.values(s.dias).reduce((a, x) => a + x.length, 0);
+                const esta = hoy >= k && hoy <= isoLocal(s.fin);
+                opciones.push({ tipo: 'semana', clave: k,
+                                titulo: '🗓 Semana del ' + fmtCorta(s.inicio) + ' al ' + fmtCorta(s.fin) + (esta ? ' (esta semana)' : ''),
+                                sub: n + ' oficina' + (n > 1 ? 's' : '') });
+            });
+            opciones.push({ tipo: 'todo', clave: '', titulo: '🗂 Todo', sub: lista.length + ' oficinas en total' });
+
+            opcionesExport = opciones;
+            $('exportOpciones').innerHTML = opciones.map((o, i) =>
+                `<button class="export-option" data-opcion="${i}"><strong>${esc(o.titulo)}</strong><span>${esc(o.sub)}</span></button>`).join('');
+            $('modalExport').style.display = 'flex';
+        }
+
+        function htmlExport(op) {
+            const lista = datosGlobales.filter(o => !ocultos.includes(o.id));
+            if (op.tipo === 'dia') {
+                const d = lista.filter(o => fechaIso(o) === op.clave);
+                return `<div class="week-card">${htmlDia(nombreDia(parseFecha(op.clave)), d, false)}</div>`;
+            }
+            const g = agrupar(lista);
+            if (op.tipo === 'semana') return htmlSemana(g.semanas[op.clave], false);
+            return htmlAgrupado(g, false);
+        }
+
+        function nombreArchivo(op) {
+            if (op.tipo === 'dia') return 'Ruta_' + op.clave + '.png';
+            if (op.tipo === 'semana') return 'Ruta_semana_' + op.clave + '.png';
+            return 'Ruta_completa_' + hoyIso() + '.png';
+        }
+
+        async function generarImagen(html) {
             if (typeof html2canvas === 'undefined') {
                 throw new Error('La librería para generar la imagen no se ha cargado. Revisa tu conexión a internet.');
             }
-            if (!document.querySelector('#captureArea .office-item')) {
-                throw new Error('No hay rutas para exportar. Importa un Excel primero.');
+            const area = $('exportArea');
+            area.innerHTML = html;
+            try {
+                const alto = area.scrollHeight || 1;
+                const scale = Math.max(0.75, Math.min(2, 12000 / alto));
+                const canvas = await html2canvas(area, {
+                    scale: scale,
+                    backgroundColor: getComputedStyle(document.body).backgroundColor,
+                    useCORS: true,
+                    onclone: (doc) => {
+                        const el = doc.getElementById('exportArea');
+                        el.style.position = 'absolute';
+                        el.style.left = '0';
+                        el.style.top = '0';
+                    }
+                });
+                return canvas.toDataURL('image/png');
+            } finally {
+                area.innerHTML = '';
             }
-            const canvas = await html2canvas(document.getElementById('captureArea'), {
-                scale: 2,
-                backgroundColor: getComputedStyle(document.body).backgroundColor,
-                useCORS: true
-            });
-            return canvas.toDataURL('image/png');
         }
 
         function mostrarImagen(dataUrl) {
-            document.getElementById('generatedImage').src = dataUrl;
-            document.getElementById('imageModal').style.display = 'flex';
+            $('generatedImage').src = dataUrl;
+            $('imageModal').style.display = 'flex';
         }
 
         function ocupado(btn, textoOcupado, estado) {
@@ -528,78 +801,133 @@
             else { btn.innerHTML = btn.dataset.txt || btn.innerHTML; btn.disabled = false; }
         }
 
-        async function descargarImagen() {
-            const btn = document.getElementById('btnDownload');
-            ocupado(btn, '⏳ Generando...', true);
-            try {
-                const dataUrl = await generarImagen();
-                const nombre = nombreArchivo();
+        async function guardarImagen(dataUrl, nombre) {
+            if (esNativo()) {
                 const FS = plugin('Filesystem');
-
-                if (esNativo()) {
-                    if (FS) {
-                        try {
-                            await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'DOCUMENTS', recursive: true });
-                            alert('Imagen guardada en Documentos: ' + nombre);
-                            return;
-                        } catch (e) { /* si no hay permiso, se muestra la imagen */ }
-                    }
-                    mostrarImagen(dataUrl);
-                    return;
+                if (FS) {
+                    try {
+                        await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'DOCUMENTS', recursive: true });
+                        alert('Imagen guardada en Documentos: ' + nombre);
+                        return;
+                    } catch (e) { /* sin permiso: se muestra la imagen */ }
                 }
+                mostrarImagen(dataUrl);
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = nombre;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mostrarImagen(dataUrl);
+        }
 
-                const link = document.createElement('a');
-                link.download = nombre;
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mostrarImagen(dataUrl);
-            } catch (err) {
-                alert(err.message || 'No se pudo generar la imagen.');
-            } finally {
-                ocupado(btn, '', false);
+        async function enviarImagen(dataUrl, nombre) {
+            const Share = plugin('Share');
+            const FS = plugin('Filesystem');
+            if (esNativo() && Share && FS) {
+                const r = await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'CACHE' });
+                await Share.share({ title: 'Mi ruta', url: r.uri, dialogTitle: 'Compartir ruta' });
+                return;
+            }
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], nombre, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: 'Mi ruta' });
+            } else {
+                mostrarImagen(dataUrl);
             }
         }
 
-        async function compartirImagen() {
-            const btn = document.getElementById('btnShare');
+        async function exportar(accion, op) {
+            const btn = $(accion === 'descargar' ? 'btnDownload' : 'btnShare');
             ocupado(btn, '⏳ Generando...', true);
             try {
-                const dataUrl = await generarImagen();
-                const nombre = nombreArchivo();
-                const Share = plugin('Share');
-                const FS = plugin('Filesystem');
-
-                if (esNativo() && Share && FS) {
-                    const r = await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'CACHE' });
-                    await Share.share({ title: 'Mi ruta', url: r.uri, dialogTitle: 'Compartir ruta' });
-                    return;
-                }
-
-                const blob = await (await fetch(dataUrl)).blob();
-                const file = new File([blob], nombre, { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Mi ruta' });
-                } else {
-                    mostrarImagen(dataUrl);
-                }
+                const dataUrl = await generarImagen(htmlExport(op));
+                const nombre = nombreArchivo(op);
+                if (accion === 'descargar') await guardarImagen(dataUrl, nombre);
+                else await enviarImagen(dataUrl, nombre);
             } catch (err) {
                 const msg = (err && (err.message || err.name)) || '';
-                if (!/cancel|abort/i.test(msg)) alert(msg || 'No se pudo compartir la imagen.');
+                if (!/cancel|abort/i.test(msg)) alert(msg || 'No se pudo generar la imagen.');
             } finally {
                 ocupado(btn, '', false);
             }
         }
 
-        // --- DELEGACIÓN DE EVENTOS (los botones se crean al renderizar) ---
-        document.getElementById('captureArea').addEventListener('click', (e) => {
-            const b = e.target.closest('[data-ocultar]');
-            if (b) ocultarOficina(b.dataset.ocultar);
-        });
-        document.getElementById('hiddenDaysList').addEventListener('click', (e) => {
-            const b = e.target.closest('[data-restaurar]');
-            if (b) restaurarDia(b.dataset.restaurar);
+        // --- WIDGET DE ANDROID ---
+        // Envía al widget el calendario completo; el widget decide cuál es "hoy".
+        function actualizarWidget() {
+            if (!esNativo()) return;
+            const W = plugin('RutasWidget');
+            if (!W) return;
+            const datos = datosGlobales
+                .filter(o => !ocultos.includes(o.id))
+                .map(o => {
+                    const f = fechaIso(o);
+                    return f ? { f: f, n: o.nombre, p: o.poblacion, d: o.direccion, v: visitadas[o.id] ? 1 : 0, m: mananas[o.id] ? 1 : 0 } : null;
+                })
+                .filter(Boolean);
+            try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos) })).catch(() => {}); } catch (e) {}
+        }
+
+        // --- ARRANQUE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            $('btnMenu').addEventListener('click', abrirMenu);
+            $('btnCloseMenu').addEventListener('click', cerrarMenu);
+            $('btnDownload').addEventListener('click', () => abrirExportar('descargar'));
+            $('btnShare').addEventListener('click', () => abrirExportar('compartir'));
+            $('btnCerrarExport').addEventListener('click', () => { $('modalExport').style.display = 'none'; });
+            $('btnCloseImage').addEventListener('click', () => { $('imageModal').style.display = 'none'; });
+            $('fileInput').addEventListener('change', handleFileUpload);
+            $('themeToggle').addEventListener('change', toggleDarkMode);
+
+            $('exportOpciones').addEventListener('click', (e) => {
+                const b = e.target.closest('[data-opcion]');
+                if (!b) return;
+                $('modalExport').style.display = 'none';
+                exportar(accionExport, opcionesExport[+b.dataset.opcion]);
+            });
+
+            $('buscador').addEventListener('input', (e) => { query = e.target.value; renderizar(); });
+            $('btnLimpiarBusqueda').addEventListener('click', () => { query = ''; $('buscador').value = ''; renderizar(); });
+
+            document.querySelectorAll('#viewSwitch button').forEach(b => b.addEventListener('click', () => {
+                vista = b.dataset.vista;
+                try { localStorage.setItem('vista', vista); } catch (e) {}
+                renderizar();
+            }));
+            $('btnDiaPrev').addEventListener('click', () => moverDia(-1));
+            $('btnDiaNext').addEventListener('click', () => moverDia(1));
+            $('btnHoy').addEventListener('click', () => { diaSel = hoyIso(); renderizar(); });
+
+            // Los botones de cada oficina se crean al renderizar: delegación de eventos
+            $('captureArea').addEventListener('click', (e) => {
+                let b;
+                if ((b = e.target.closest('[data-visitar]'))) alternarVisitada(b.dataset.visitar);
+                else if ((b = e.target.closest('[data-manana]'))) alternarManana(b.dataset.manana);
+                else if ((b = e.target.closest('[data-ocultar]'))) ocultarOficina(b.dataset.ocultar);
+            });
+            $('hiddenDaysList').addEventListener('click', (e) => {
+                const b = e.target.closest('[data-restaurar]');
+                if (b) restaurarDia(b.dataset.restaurar);
+            });
+
+            // Preferencias y datos guardados
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                $('themeToggle').checked = true;
+            }
+            vista = localStorage.getItem('vista') === 'todo' ? 'todo' : 'dia';
+            datosGlobales = leerJSON('rutas_guardadas', []).map(asegurarId);
+            ocultos = leerJSON('oficinas_ocultas', []);
+            visitadas = leerJSON('oficinas_visitadas', {});
+            mananas = leerJSON('oficinas_manana', {});
+            diaSel = diaPorDefecto();
+
+            renderizar();
+            actualizarWidget();
         });
     </script>
 </body>
