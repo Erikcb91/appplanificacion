@@ -334,17 +334,17 @@
 
             const fechasOrdenadas = Object.keys(agrupadasPorFecha).sort();
             const semanas = {};
+            const sinFecha = {};   // días cuya fecha no se pudo interpretar
 
             fechasOrdenadas.forEach(fechaStr => {
-                if (fechaStr === 'Sin Fecha') return;
-                const date = new Date(fechaStr);
+                const date = parseFecha(fechaStr);
+                if (!date) { sinFecha[fechaStr] = agrupadasPorFecha[fechaStr]; return; }
                 const day = date.getDay();
-                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-                const lunes = new Date(date.setDate(diff));
-                const weekKey = lunes.toISOString().split('T')[0];
-                
+                const lunes = new Date(date.getFullYear(), date.getMonth(), date.getDate() - (day === 0 ? 6 : day - 1));
+                const weekKey = isoLocal(lunes);
+
                 if (!semanas[weekKey]) {
-                    semanas[weekKey] = { inicio: new Date(lunes), fin: new Date(lunes.getTime() + 6 * 86400000), dias: {} };
+                    semanas[weekKey] = { inicio: lunes, fin: new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6), dias: {} };
                 }
                 semanas[weekKey].dias[fechaStr] = agrupadasPorFecha[fechaStr];
             });
@@ -352,4 +352,255 @@
             const container = document.getElementById('captureArea');
             container.innerHTML = ''; 
             const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', mo
+            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+            const nombreDia = (d) => {
+                const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                return t.charAt(0).toUpperCase() + t.slice(1);
+            };
+
+            const wazeUrl = (o) => {
+                const destino = [o.direccion, o.poblacion].filter(Boolean).join(', ');
+                return 'https://waze.com/ul?q=' + encodeURIComponent(destino) + '&navigate=yes';
+            };
+
+            const htmlOficina = (o) => {
+                const badge = o.tipo ? `<span class="badge-type">${esc(o.tipo)}</span>` : '';
+                const direccion = o.direccion
+                    ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
+                    : '';
+                const poblacion = o.poblacion ? `<span class="town-name">${esc(o.poblacion)}</span>` : '';
+                return `
+                    <div class="office-item" id="${o.id}">
+                        <div class="office-info">
+                            <h4 class="office-name">${esc(o.nombre)}</h4>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                ${badge}
+                                <button class="btn-check" data-ocultar="${o.id}" data-html2canvas-ignore="true" aria-label="Ocultar oficina">✕</button>
+                            </div>
+                        </div>
+                        ${direccion}
+                        ${poblacion}
+                    </div>`;
+            };
+
+            // Devuelve el HTML de un día, o '' si todas sus oficinas están ocultas
+            const htmlDia = (titulo, oficinas) => {
+                const visibles = oficinas.filter(o => !ocultosIds.includes(o.id));
+                if (visibles.length === 0) return '';
+                const ir = `<a class="btn-start" href="${wazeUrl(visibles[0])}" target="_blank" rel="noopener" data-html2canvas-ignore="true">🚀 Ir al 1º</a>`;
+                return `
+                    <div class="day-section">
+                        <div class="day-header">
+                            <span class="day-title">${esc(titulo)}</span>
+                            <div class="day-actions">${ir}</div>
+                        </div>
+                        ${visibles.map(htmlOficina).join('')}
+                    </div>`;
+            };
+
+            let html = '';
+
+            Object.keys(semanas).sort().forEach(weekKey => {
+                const sem = semanas[weekKey];
+                const dias = Object.keys(sem.dias).sort()
+                    .map(f => htmlDia(nombreDia(parseFecha(f)), sem.dias[f]))
+                    .join('');
+                if (!dias) return;
+                html += `
+                    <div class="week-card">
+                        <div class="week-header">Semana del ${formatDate(sem.inicio)} al ${formatDate(sem.fin)}</div>
+                        ${dias}
+                    </div>`;
+            });
+
+            const diasSinFecha = Object.keys(sinFecha).sort()
+                .map(f => htmlDia(f, sinFecha[f]))
+                .join('');
+            if (diasSinFecha) {
+                html += `
+                    <div class="week-card">
+                        <div class="week-header">Sin fecha</div>
+                        ${diasSinFecha}
+                    </div>`;
+            }
+
+            if (!html) {
+                html = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                            <h3 style="margin:0 0 10px 0;">Todas las oficinas están ocultas</h3>
+                            <p style="font-size:0.9em;">Abre el menú para restaurar los días.</p>
+                        </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- UTILIDADES ---
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function isoLocal(d) {
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + mm + '-' + dd;
+        }
+
+        // Acepta AAAA-MM-DD y DD/MM/AAAA; devuelve una fecha local o null
+        function parseFecha(str) {
+            let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(str);
+            if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+            m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(str);
+            if (m) return new Date(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
+            return null;
+        }
+
+        function leerOcultos() {
+            try { return JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]'); }
+            catch (e) { return []; }
+        }
+
+        // --- OCULTAR / RESTAURAR ---
+        function ocultarOficina(id) {
+            const ocultos = leerOcultos();
+            if (!ocultos.includes(id)) ocultos.push(id);
+            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
+            renderizarRutas();
+        }
+
+        function restaurarDia(fecha) {
+            const idsDelDia = datosGlobales.filter(o => o.fecha === fecha).map(o => o.id);
+            const ocultos = leerOcultos().filter(id => !idsDelDia.includes(id));
+            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
+            renderizarRutas();
+            actualizarListaDiasOcultos();
+        }
+
+        function actualizarListaDiasOcultos() {
+            const ocultos = leerOcultos();
+            const porDia = {};
+            datosGlobales.forEach(o => {
+                if (ocultos.includes(o.id)) porDia[o.fecha] = (porDia[o.fecha] || 0) + 1;
+            });
+
+            const fechas = Object.keys(porDia).sort();
+            const seccion = document.getElementById('hiddenDaysSection');
+            const lista = document.getElementById('hiddenDaysList');
+
+            seccion.style.display = fechas.length ? 'block' : 'none';
+            lista.innerHTML = fechas.map(f => {
+                const d = parseFecha(f);
+                const etiqueta = d ? d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }) : f;
+                const n = porDia[f];
+                return `
+                    <div class="hidden-item">
+                        <span>${esc(etiqueta)} · ${n} oculta${n > 1 ? 's' : ''}</span>
+                        <button class="btn-restore-day" data-restaurar="${esc(f)}">Restaurar</button>
+                    </div>`;
+            }).join('');
+        }
+
+        // --- IMAGEN: DESCARGAR / COMPARTIR ---
+        const esNativo = () => !!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform());
+        const plugin = (nombre) => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins[nombre]) || null;
+        const nombreArchivo = () => 'Mi_Ruta_' + isoLocal(new Date()) + '.png';
+
+        async function generarImagen() {
+            if (typeof html2canvas === 'undefined') {
+                throw new Error('La librería para generar la imagen no se ha cargado. Revisa tu conexión a internet.');
+            }
+            if (!document.querySelector('#captureArea .office-item')) {
+                throw new Error('No hay rutas para exportar. Importa un Excel primero.');
+            }
+            const canvas = await html2canvas(document.getElementById('captureArea'), {
+                scale: 2,
+                backgroundColor: getComputedStyle(document.body).backgroundColor,
+                useCORS: true
+            });
+            return canvas.toDataURL('image/png');
+        }
+
+        function mostrarImagen(dataUrl) {
+            document.getElementById('generatedImage').src = dataUrl;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function ocupado(btn, textoOcupado, estado) {
+            if (estado) { btn.dataset.txt = btn.innerHTML; btn.innerHTML = textoOcupado; btn.disabled = true; }
+            else { btn.innerHTML = btn.dataset.txt || btn.innerHTML; btn.disabled = false; }
+        }
+
+        async function descargarImagen() {
+            const btn = document.getElementById('btnDownload');
+            ocupado(btn, '⏳ Generando...', true);
+            try {
+                const dataUrl = await generarImagen();
+                const nombre = nombreArchivo();
+                const FS = plugin('Filesystem');
+
+                if (esNativo()) {
+                    if (FS) {
+                        try {
+                            await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'DOCUMENTS', recursive: true });
+                            alert('Imagen guardada en Documentos: ' + nombre);
+                            return;
+                        } catch (e) { /* si no hay permiso, se muestra la imagen */ }
+                    }
+                    mostrarImagen(dataUrl);
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.download = nombre;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mostrarImagen(dataUrl);
+            } catch (err) {
+                alert(err.message || 'No se pudo generar la imagen.');
+            } finally {
+                ocupado(btn, '', false);
+            }
+        }
+
+        async function compartirImagen() {
+            const btn = document.getElementById('btnShare');
+            ocupado(btn, '⏳ Generando...', true);
+            try {
+                const dataUrl = await generarImagen();
+                const nombre = nombreArchivo();
+                const Share = plugin('Share');
+                const FS = plugin('Filesystem');
+
+                if (esNativo() && Share && FS) {
+                    const r = await FS.writeFile({ path: nombre, data: dataUrl.split(',')[1], directory: 'CACHE' });
+                    await Share.share({ title: 'Mi ruta', url: r.uri, dialogTitle: 'Compartir ruta' });
+                    return;
+                }
+
+                const blob = await (await fetch(dataUrl)).blob();
+                const file = new File([blob], nombre, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Mi ruta' });
+                } else {
+                    mostrarImagen(dataUrl);
+                }
+            } catch (err) {
+                const msg = (err && (err.message || err.name)) || '';
+                if (!/cancel|abort/i.test(msg)) alert(msg || 'No se pudo compartir la imagen.');
+            } finally {
+                ocupado(btn, '', false);
+            }
+        }
+
+        // --- DELEGACIÓN DE EVENTOS (los botones se crean al renderizar) ---
+        document.getElementById('captureArea').addEventListener('click', (e) => {
+            const b = e.target.closest('[data-ocultar]');
+            if (b) ocultarOficina(b.dataset.ocultar);
+        });
+        document.getElementById('hiddenDaysList').addEventListener('click', (e) => {
+            const b = e.target.closest('[data-restaurar]');
+            if (b) restaurarDia(b.dataset.restaurar);
+        });
+    </script>
+</body>
+</html>
