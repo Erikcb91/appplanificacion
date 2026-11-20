@@ -14,7 +14,8 @@
         android:textColor="#DBEAFE"
         android:textSize="12sp"
         android:textStyle="bold"
-        android:maxLines="1" />
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/widget_resumen"

@@ -13,12 +13,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
- * Widget de pantalla de inicio: resumen de las oficinas de HOY.
- * Lee el calendario guardado por RutasWidgetPlugin y calcula "hoy" al pintarse,
+ * Widget de pantalla de inicio: resumen de las oficinas del día en curso.
+ * Sábado y domingo muestra las del lunes siguiente.
+ * Lee el calendario guardado por RutasWidgetPlugin y calcula el día al pintarse,
  * así cambia solo de día aunque no se abra la app.
  */
 public class RutasWidgetProvider extends AppWidgetProvider {
@@ -41,6 +44,21 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    /**
+     * Día que debe mostrar el widget: el mismo día de lunes a viernes;
+     * el lunes siguiente si hoy es sábado o domingo. No modifica el parámetro.
+     */
+    static Calendar diaObjetivo(Calendar ahora) {
+        Calendar c = (Calendar) ahora.clone();
+        int dow = c.get(Calendar.DAY_OF_WEEK);
+        if (dow == Calendar.SATURDAY) {
+            c.add(Calendar.DAY_OF_MONTH, 2);
+        } else if (dow == Calendar.SUNDAY) {
+            c.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        return c;
+    }
+
     private static String capitalizar(String s) {
         return s.isEmpty() ? s : s.substring(0, 1).toUpperCase(Locale.getDefault()) + s.substring(1);
     }
@@ -48,9 +66,13 @@ public class RutasWidgetProvider extends AppWidgetProvider {
     private static RemoteViews construir(Context ctx) {
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_rutas);
 
-        Date ahora = new Date();
-        String hoy = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(ahora);
-        String titulo = capitalizar(new SimpleDateFormat("EEEE d MMM", new Locale("es", "ES")).format(ahora));
+        Calendar ahora = Calendar.getInstance();
+        Calendar objetivo = diaObjetivo(ahora);
+        boolean adelantado = objetivo.get(Calendar.DAY_OF_YEAR) != ahora.get(Calendar.DAY_OF_YEAR)
+                || objetivo.get(Calendar.YEAR) != ahora.get(Calendar.YEAR);
+
+        String dia = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(objetivo.getTime());
+        String fecha = new SimpleDateFormat("EEEE d MMM", new Locale("es", "ES")).format(objetivo.getTime());
 
         int total = 0;
         int hechas = 0;
@@ -58,14 +80,17 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         String proxNombre = null;
         String proxDetalle = "";
         boolean proxManana = false;
+        Set<String> provincias = new LinkedHashSet<String>();
 
         try {
             String raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, "[]");
             JSONArray arr = new JSONArray(raw);
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject o = arr.getJSONObject(i);
-                if (!hoy.equals(o.optString("f"))) continue;
+                if (!dia.equals(o.optString("f"))) continue;
                 total++;
+                String pv = o.optString("pv");
+                if (!pv.isEmpty()) provincias.add(pv);
                 boolean visitada = o.optInt("v") == 1;
                 boolean manana = o.optInt("m") == 1;
                 if (visitada) {
@@ -85,10 +110,19 @@ public class RutasWidgetProvider extends AppWidgetProvider {
             // datos ilegibles: se muestra el estado vacío
         }
 
+        String titulo = adelantado ? "Próximo " + fecha : capitalizar(fecha);
+        if (!provincias.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (String p : provincias) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(p);
+            }
+            titulo += "  ·  " + sb;
+        }
         v.setTextViewText(R.id.widget_titulo, titulo);
 
         if (total == 0) {
-            v.setTextViewText(R.id.widget_resumen, "Hoy no tienes oficinas");
+            v.setTextViewText(R.id.widget_resumen, adelantado ? "El lunes no tienes oficinas" : "Hoy no tienes oficinas");
             v.setViewVisibility(R.id.widget_progreso, View.GONE);
             v.setViewVisibility(R.id.widget_proxima, View.GONE);
             v.setViewVisibility(R.id.widget_detalle, View.GONE);
