@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
     <title>Mis Rutas</title>
+    
+    <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -105,19 +108,25 @@
         #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
         #imageModal img { max-width: 100%; max-height: 80%; border-radius: 12px; }
+        
+        /* Banner de error para debug */
+        #errorBanner { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--danger); color: white; padding: 10px; text-align: center; font-weight: bold; z-index: 99999; }
     </style>
 </head>
 <body>
 
+    <!-- Banner de error oculto -->
+    <div id="errorBanner"></div>
+
     <div class="top-bar">
         <span class="app-title">Mis Rutas</span>
-        <button class="btn-menu" onclick="abrirMenu(event)">☰</button>
+        <button id="btnMenu" class="btn-menu">☰</button>
     </div>
 
     <div class="main-content">
         <div class="controls" data-html2canvas-ignore="true">
-            <button id="downloadBtn" class="btn-action btn-download" onclick="descargarImagen(event)">📥 Descargar</button>
-            <button id="shareBtn" class="btn-action btn-share" onclick="compartirImagen(event)">📤 Compartir</button>
+            <button id="btnDownload" class="btn-action btn-download">📥 Descargar</button>
+            <button id="btnShare" class="btn-action btn-share">📤 Compartir</button>
         </div>
 
         <div id="captureArea">
@@ -133,10 +142,9 @@
         <div class="modal-content">
             <h2>Opciones</h2>
             <label for="fileInput" class="import-label">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 Importar Excel (.xlsx)
             </label>
-            <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
+            <input type="file" id="fileInput" accept=".xlsx, .xls">
 
             <div id="hiddenDaysSection" style="display: none;">
                 <div class="hidden-list-title">Días con oficinas ocultas</div>
@@ -146,51 +154,91 @@
             <div class="theme-toggle-container">
                 <span class="theme-label">🌙 Modo Oscuro</span>
                 <label class="switch">
-                    <input type="checkbox" id="themeToggle" onchange="toggleDarkMode()">
+                    <input type="checkbox" id="themeToggle">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <button class="btn-close" onclick="cerrarMenu()">Cerrar Menú</button>
+            <button id="btnCloseMenu" class="btn-close">Cerrar Menú</button>
         </div>
     </div>
 
     <div id="imageModal">
         <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
         <img id="generatedImage" src="" alt="Ruta">
-        <button class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px; background-color: #fff; color: #333;" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
+        <button id="btnCloseImage" class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px; background-color: #fff; color: #333;">Cerrar</button>
     </div>
 
     <script>
+        // --- BANNER DE ERRORES PARA DEBUG ---
+        window.onerror = function(msg, url, line, col, error) {
+            const banner = document.getElementById('errorBanner');
+            banner.style.display = 'block';
+            banner.innerText = "Error app: " + msg + " (Línea " + line + ")";
+            return false;
+        };
+
         let datosGlobales = [];
 
-        // Funciones de Menú (Protegidas)
-        function abrirMenu(e) {
-            if(e) e.preventDefault();
+        // Se ejecuta cuando todo el HTML ha cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Asignar eventos
+            document.getElementById('btnMenu').addEventListener('click', abrirMenu);
+            document.getElementById('btnCloseMenu').addEventListener('click', cerrarMenu);
+            document.getElementById('btnDownload').addEventListener('click', descargarImagen);
+            document.getElementById('btnShare').addEventListener('click', compartirImagen);
+            document.getElementById('btnCloseImage').addEventListener('click', () => {
+                document.getElementById('imageModal').style.display = 'none';
+            });
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.getElementById('themeToggle').addEventListener('change', toggleDarkMode);
+
+            // Cargar preferencias y datos
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeToggle').checked = true;
+            }
+            
+            const guardadas = localStorage.getItem('rutas_guardadas');
+            if (guardadas) {
+                try {
+                    datosGlobales = JSON.parse(guardadas);
+                    renderizarRutas();
+                } catch(e) {}
+            }
+        });
+
+        // --- LÓGICA DEL MENÚ ---
+        function abrirMenu() {
             document.getElementById('modalMenu').style.display = 'flex';
-            try { actualizarListaDiasOcultos(); } catch(err) { console.log(err); }
+            actualizarListaDiasOcultos();
         }
 
         function cerrarMenu() {
             document.getElementById('modalMenu').style.display = 'none';
         }
 
-        function toggleDarkMode() {
-            try {
-                const isDark = document.getElementById('themeToggle').checked;
-                if (isDark) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.documentElement.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'light');
-                }
-            } catch(e) { console.log(e); }
+        function toggleDarkMode(e) {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
         }
 
+        // --- LECTURA DE EXCEL ---
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                alert("La librería para leer Excel no se ha cargado. Revisa tu conexión a internet.");
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -201,7 +249,7 @@
                     const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
                     procesarDatosExcel(json);
                 } catch(err) {
-                    alert("Error al leer el archivo Excel.");
+                    alert("Error al procesar el archivo. Asegúrate de que es un Excel válido.");
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -274,6 +322,7 @@
             }
         }
 
+        // --- RENDERIZADO ---
         function renderizarRutas() {
             if (datosGlobales.length === 0) return;
 
@@ -303,34 +352,4 @@
             const container = document.getElementById('captureArea');
             container.innerHTML = ''; 
             const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-
-            Object.keys(semanas).sort().forEach(weekKey => {
-                const semana = semanas[weekKey];
-                const weekCard = document.createElement('div');
-                weekCard.className = 'week-card';
-
-                const weekHeader = document.createElement('div');
-                weekHeader.className = 'week-header';
-                weekHeader.innerText = `Semana del ${formatDate(semana.inicio)} al ${formatDate(semana.fin)}`;
-                weekCard.appendChild(weekHeader);
-
-                Object.keys(semana.dias).sort().forEach(fecha => {
-                    const oficinasDia = semana.dias[fecha];
-                    const daySection = document.createElement('div');
-                    daySection.className = 'day-section';
-
-                    const dayHeader = document.createElement('div');
-                    dayHeader.className = 'day-header';
-                    
-                    const dateFormatted = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
-                    const dateCapitalized = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
-                    const query = encodeURIComponent(oficinasDia[0].direccion + ', ' + oficinasDia[0].poblacion);
-
-                    dayHeader.innerHTML = `
-                        <span class="day-title">${dateCapitalized}</span>
-                        <div class="day-actions" data-html2canvas-ignore="true">
-                            <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start">🚀 1º</a>
-                        </div>
-                    `;
-         
+            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', mo
