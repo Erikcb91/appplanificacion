@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Rutas</title>
+    <!-- Librería para leer Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Librería para descargar imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 5px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Barra Superior */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 650px; background-color: #1976d2; color: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
+        .app-title { font-weight: bold; font-size: 1.1em; }
+        .btn-menu { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; }
+
+        /* Menú Modal */
+        #modalMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background-color: white; width: 90%; max-width: 400px; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .modal-content h2 { margin-top: 0; color: #333; text-align: center; font-size: 1.2em; }
+        .modal-content label { display: block; background-color: #e3f2fd; color: #1565c0; padding: 15px; text-align: center; border-radius: 8px; font-weight: bold; border: 2px dashed #90caf9; cursor: pointer; margin-bottom: 15px; }
+        .modal-content input[type="file"] { display: none; }
+        .btn-close { width: 100%; background-color: #ef5350; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer; }
+
+        /* Contenedores de la ruta */
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 650px; justify-content: center; }
+        .btn-action { background-color: #1976d2; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
+        .btn-restore { background-color: #7b1fa2; display: none; }
+
+        .container { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; width: 100%; max-width: 650px; }
+        
+        .week-header { background-color: #0277bd; color: white; padding: 12px 10px; font-weight: bold; font-size: 1.1em; text-align: center; text-transform: uppercase; margin-top: 10px; }
+        .week-header:first-of-type { margin-top: 0; }
+        .day-header { background-color: #e1f5fe; color: #01579b; padding: 10px; font-weight: bold; font-size: 1.05em; border-bottom: 1px solid #b3e5fc; display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-start { background-color: #2e7d32; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8em; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 5px; }
+        td { padding: 12px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
+        
+        .office-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+        .name { font-weight: 700; color: #333; font-size: 1em; }
+        .type { font-size: 0.75em; background-color: #fce4ec; color: #c62828; padding: 2px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px; }
+        .btn-check { margin-left: auto; background: transparent; border: none; font-size: 1.2em; cursor: pointer; opacity: 0.6; }
+        
+        .address-link { display: inline-flex; align-items: center; font-size: 0.9em; color: #1565c0; font-weight: 600; text-decoration: none; background-color: #e3f2fd; padding: 5px 8px; border-radius: 4px; margin-top: 4px; border: 1px solid #bbdefb; }
+        .town { display: block; font-size: 0.85em; color: #757575; margin-top: 4px; font-weight: bold; text-transform: uppercase;}
+
+        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
+        #imageModal img { max-width: 100%; max-height: 80%; border-radius: 6px; }
+        #closeModalBtn { margin-top: 15px; padding: 10px 20px; border: none; border-radius: 6px; background-color: #fff; color: #333; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <span class="app-title">Planificación de Rutas</span>
+        <button class="btn-menu" onclick="document.getElementById('modalMenu').style.display='flex'">☰</button>
+    </div>
+
+    <!-- MENÚ DESPLEGABLE (IMPORTAR) -->
+    <div id="modalMenu">
+        <div class="modal-content">
+            <h2>Opciones</h2>
+            <label for="fileInput">
+                📂 Importar archivo Excel (.xlsx)<br>
+                <span style="font-size: 0.8em; font-weight: normal; color: #555;">Se filtrarán solo tus oficinas</span>
+            </label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
+            <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="controls" data-html2canvas-ignore="true">
+        <button id="downloadBtn" class="btn-action" onclick="descargarImagen()">📥 Descargar Imagen HD</button>
+        <button id="restoreBtn" class="btn-action btn-restore" onclick="restoreAll()">🔄 Restaurar</button>
+    </div>
+
+    <!-- AQUÍ SE PINTARÁ LA RUTA -->
+    <div class="container" id="captureArea">
+        <div style="padding: 20px; text-align: center; color: #757575;" id="emptyState">
+            <h3>No hay ninguna ruta cargada</h3>
+            <p>Pulsa el menú (☰) arriba a la derecha e importa tu archivo Excel.</p>
+        </div>
+    </div>
+
+    <!-- MODAL DE IMAGEN -->
+    <div id="imageModal">
+        <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
+        <img id="generatedImage" src="" alt="Ruta">
+        <button id="closeModalBtn" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
+    </div>
+
+    <script>
+        // --- LÓGICA DE IMPORTACIÓN DE EXCEL ---
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // Leer la primera hoja (normalmente ESTUDIOS o PLANIFICACION)
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convertir a JSON
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                procesarDatosExcel(json);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function procesarDatosExcel(rows) {
+            let oficinas = [];
+            let headers = [];
+            
+            // Buscar la fila de cabeceras (donde pone TECNICO o NOMBRE)
+            let headerRowIndex = -1;
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
+                    headers = rows[i].map(h => String(h).toUpperCase().trim());
+                    headerRowIndex = i;
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                alert("No se ha encontrado el formato correcto en el Excel.");
+                return;
+            }
+
+            // Obtener índices de las columnas
+            const idxTecnico = headers.indexOf('TECNICO');
+            const idxFecha = headers.findIndex(h => h.includes('FECHA'));
+            const idxNombre = headers.indexOf('NOMBRE');
+            const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
+            const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
+            const idxTipo = headers.indexOf('TIPO'); // Para el archivo de renoves
+
+            // Recorrer las filas de datos
+            for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
+                const tipo = idxTipo !== -1 ? String(row[idxTipo]).toUpperCase().trim() : '';
+
+                // FILTRO: ERIK o archivos de ALTURA (Renoves)
+                // Si el archivo tiene columna TECNICO, filtramos por "ERIK".
+                // Si no tiene TECNICO (es el de Renoves), lo importamos todo.
+                let incluir = false;
+                if (idxTecnico !== -1) {
+                    if (tecnico === 'ERIK') incluir = true;
+                } else {
+                    incluir = true; // Archivo de Renoves
+                }
+
+                if (incluir) {
+                    // Formatear la fecha (viene como número de serie de Excel)
+                    let fechaStr = "Sin Fecha";
+                    if (row[idxFecha]) {
+                        if (typeof row[idxFecha] === 'number') {
+                            // Convertir número de serie de Excel a fecha JS
+                            const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
+                            fechaStr = dateObj.toISOString().split('T')[0];
+                        } else {
+                            fechaStr = String(row[idxFecha]).split(' ')[0];
+                        }
+                    }
+
+                    oficinas.push({
+                        fecha: fechaStr,
+                        nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
+                        direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
+                        poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
+                        tipo: tipo
+                    });
+                }
+            }
+
+            if (oficinas.length > 0) {
+                guardarYDibujar(oficinas);
+            } else {
+                alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
+            }
+        }
+
+        // --- LÓGICA DE DIBUJADO Y GUARDADO ---
+        function guardarYDibujar(oficinas) {
+            // Guardar en el dispositivo para que no se pierda al cerrar
+            localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
+            
+            // Agrupar por fecha
+            const agrupadas = {};
+            oficinas.forEach(o => {
+                if (!agrupadas[o.fecha]) agrupadas[o.fecha] = [];
+                agrupadas[o.fecha].push(o);
+            });
+
+            const container = document.getElementById('captureArea');
+            container.innerHTML = ''; // Limpiar
+
+            // Ordenar fechas
+            const fechasOrdenadas = Object.keys(agrupadas).sort();
+
+            fechasOrdenadas.forEach(fecha => {
+                const oficinasDia = agrupadas[fecha];
+                
+                // Cabecera del Día
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = `<span>${fecha}</span>`;
+                
+                // Botón de ir al primero
+                if (oficinasDia.length > 0) {
+                    const query = encodeURIComponent(oficinasDia[0].direccion + ', ' + oficinasDia[0].poblacion);
+                    dayHeader.innerHTML += `<a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start" data-html2canvas-ignore="true">🚀 Ir al 1º</a>`;
+                }
+                container.appendChild(dayHeader);
+
+                // Tabla
+                const table = document.createElement('table');
+                const tbody = document.createElement('tbody');
+
+                oficinasDia.forEach((ofi, index) => {
+                    const tr = document.createElement('tr');
+                    const safeId = 'row-' + btoa(ofi.nombre).replace(/[^a-zA-Z0-9]/g, ''); // ID único
+                    tr.id = safeId;
+
+                    const query = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
+                    const badgeTipo = ofi.tipo ? `<span class="type">${ofi.tipo}</span>` : '';
+
+                    tr.innerHTML = `
+                        <td>
+                            <div class="office-row">
+                                <span class="name">${ofi.nombre} ${badgeTipo}</span>
+                                <button class="btn-check" data-html2canvas-ignore="true" onclick="ocultarOficina('${safeId}')">❌</button>
+                            </div>
+                            <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="address-link">${ofi.direccion} <span style="margin-left:4px;">🧭</span></a>
+                            <span class="town">${ofi.poblacion}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                container.appendChild(table);
+            });
+
+            // Restaurar visibilidad de las que estaban ocultas
+            const ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            ocultas.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            checkRestoreBtn();
+        }
+
+        // --- LÓGICA DE OCULTAR / RESTAURAR ---
+        function ocultarOficina(rowId) {
+            const row = document.getElementById(rowId);
+            row.style.display = 'none';
+            
+            let ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            if (!ocultas.includes(rowId)) {
+                ocultas.push(rowId);
+                localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultas));
+            }
+            checkRestoreBtn();
+        }
+
+        function restoreAll() {
+            localStorage.removeItem('oficinas_ocultas');
+            document.querySelectorAll('tr').forEach(tr => tr.style.display = 'table-row');
+            document.getElementById('restoreBtn').style.display = 'none';
+        }
+
+        function checkRestoreBtn() {
+            const ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            document.getElementById('restoreBtn').style.display = ocultas.length > 0 ? 'block' : 'none';
+        }
+
+        // --- LÓGICA DE DESCARGA DE IMAGEN ---
+        function descargarImagen() {
+            const btn = document.getElementById('downloadBtn');
+            btn.innerText = "⏳ Generando...";
+            btn.disabled = true;
+
+            html2canvas(document.getElementById('captureArea'), {
+                scale: 4,
+                backgroundColor: "#ffffff",
+                useCORS: true,
+                ignoreElements: function(element) {
+                    return element.classList.contains('btn-check') || element.classList.contains('btn-start') || element.tagName === 'BUTTON';
+                }
+            }).then(canvas => {
+                const dataUrl = canvas.toDataURL('image/png');
+                try {
+                    let link = document.createElement('a');
+                    link.download = 'Mi_Ruta.png';
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (error) {
+                    document.getElementById('generatedImage').src = dataUrl;
+                    document.getElementById('imageModal').style.display = 'flex';
+                }
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    document.getElementById('generatedImage').src = dataUrl;
+                    document.getElementById('imageModal').style.display = 'flex';
+                }
+                btn.innerText = "📥 Descargar Imagen HD";
+                btn.disabled = false;
+            });
+        }
+
+        // --- CARGAR DATOS GUARDADOS AL INICIAR ---
+        window.onload = function() {
+            const guardadas = localStorage.getItem('rutas_guardadas');
+            if (guardadas) {
+                guardarYDibujar(JSON.parse(guardadas));
+            }
+        };
+    </script>
+</body>
+</html>

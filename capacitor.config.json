@@ -1,0 +1,6 @@
+{
+  "appId": "com.erik.rutas",
+  "appName": "Mis Rutas",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}
