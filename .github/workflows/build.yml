@@ -29,6 +29,27 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Generate Static Keystore (Firma fija para actualizaciones)
+        run: |
+          keytool -genkeypair -v -keystore my-release-key.jks -alias myalias -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Erik, OU=Personal, O=App, L=Burgos, S=Burgos, C=ES"
+
+      - name: Inject Signing Config into Gradle
+        run: |
+          sed -i '/android {/a \
+              signingConfigs {\
+                  debug {\
+                      storeFile file("../../my-release-key.jks")\
+                      storePassword "password123"\
+                      keyAlias "myalias"\
+                      keyPassword "password123"\
+                  }\
+              }\
+              buildTypes {\
+                  debug {\
+                      signingConfig signingConfigs.debug\
+                  }\
+              }' android/app/build.gradle
+
       - name: Sync web code
         run: npx cap sync android
 
