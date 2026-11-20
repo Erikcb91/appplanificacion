@@ -409,7 +409,7 @@
                     }
 
                     oficinas.push({
-                        id: 'ofi-' + Math.random().toString(36).substr(2, 9), // ID único por oficina
+                        id: 'ofi-' + Math.random().toString(36).substr(2, 9),
                         fecha: fechaStr,
                         nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
                         direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
@@ -422,7 +422,7 @@
             if (oficinas.length > 0) {
                 datosGlobales = oficinas;
                 localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
-                localStorage.removeItem('oficinas_ocultas'); // Limpiamos ocultos al importar nueva ruta
+                localStorage.removeItem('oficinas_ocultas');
                 document.getElementById('modalMenu').style.display='none';
                 renderizarRutas();
             } else {
@@ -447,7 +447,7 @@
                 if (fechaStr === 'Sin Fecha') return;
                 const date = new Date(fechaStr);
                 const day = date.getDay();
-                const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Lunes
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
                 const lunes = new Date(date.setDate(diff));
                 const weekKey = lunes.toISOString().split('T')[0];
                 
@@ -500,126 +500,100 @@
 
                     oficinasDia.forEach(ofi => {
                         const q = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
-                        const badge = ofi.tipo ? `<span class="badge-type">${ofiecha]) {
-                        if (typeof row[idxFecha] === 'number') {
-                            const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
-                            fechaStr = dateObj.toISOString().split('T')[0];
-                        } else {
-                            fechaStr = String(row[idxFecha]).split(' ')[0];
-                        }
-                    }
-
-                    oficinas.push({
-                        fecha: fechaStr,
-                        nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
-                        direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
-                        poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
-                        tipo: tipo
-                    });
-                }
-            }
-
-            if (oficinas.length > 0) {
-                guardarYDibujar(oficinas);
-                document.getElementById('modalMenu').style.display='none'; // Cerrar menú tras importar
-            } else {
-                alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
-            }
-        }
-
-        // --- LÓGICA DE DIBUJADO Y GUARDADO ---
-        function guardarYDibujar(oficinas) {
-            localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
-            
-            // Agrupar por fecha
-            const agrupadas = {};
-            oficinas.forEach(o => {
-                if (!agrupadas[o.fecha]) agrupadas[o.fecha] = [];
-                agrupadas[o.fecha].push(o);
-            });
-
-            const container = document.getElementById('captureArea');
-            container.innerHTML = ''; // Limpiar
-
-            const fechasOrdenadas = Object.keys(agrupadas).sort();
-
-            fechasOrdenadas.forEach(fecha => {
-                const oficinasDia = agrupadas[fecha];
-                
-                // Cabecera del Día
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'day-header';
-                dayHeader.innerHTML = `<span>${fecha}</span>`;
-                
-                if (oficinasDia.length > 0) {
-                    const query = encodeURIComponent(oficinasDia[0].direccion + ', ' + oficinasDia[0].poblacion);
-                    dayHeader.innerHTML += `<a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start" data-html2canvas-ignore="true">🚀 Ir al 1º</a>`;
-                }
-                container.appendChild(dayHeader);
-
-                // Tabla
-                const table = document.createElement('table');
-                const tbody = document.createElement('tbody');
-
-                oficinasDia.forEach((ofi, index) => {
-                    const tr = document.createElement('tr');
-                    const safeId = 'row-' + btoa(encodeURIComponent(ofi.nombre)).replace(/[^a-zA-Z0-9]/g, ''); 
-                    tr.id = safeId;
-
-                    const query = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
-                    const badgeTipo = ofi.tipo ? `<span class="type">${ofi.tipo}</span>` : '';
-
-                    tr.innerHTML = `
-                        <td>
-                            <div class="office-row">
-                                <span class="name">${ofi.nombre} ${badgeTipo}</span>
-                                <button class="btn-check" data-html2canvas-ignore="true" onclick="ocultarOficina('${safeId}')">❌</button>
+                        const badge = ofi.tipo ? `<span class="badge-type">${ofi.tipo}</span>` : '';
+                        const isHidden = ocultosIds.includes(ofi.id);
+                        
+                        const officeEl = document.createElement('div');
+                        officeEl.className = `office-item ${isHidden ? 'hidden' : ''}`;
+                        officeEl.id = ofi.id;
+                        
+                        officeEl.innerHTML = `
+                            <div class="office-info">
+                                <p class="office-name">${ofi.nombre} ${badge}</p>
+                                <button class="btn-check" data-html2canvas-ignore="true" onclick="ocultarOficina('${ofi.id}')">❌</button>
                             </div>
-                            <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="address-link">${ofi.direccion} <span style="margin-left:4px;">🧭</span></a>
-                            <span class="town">${ofi.poblacion}</span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                            <span class="town-name">${ofi.poblacion}</span>
+                            <a href="https://waze.com/ul?q=${q}&navigate=yes" target="_blank" class="address-btn">
+                                ${ofi.direccion} <span class="address-icon">🧭</span>
+                            </a>
+                        `;
+                        daySection.appendChild(officeEl);
+                    });
+
+                    weekCard.appendChild(daySection);
                 });
 
-                table.appendChild(tbody);
-                container.appendChild(table);
+                container.appendChild(weekCard);
             });
 
-            // Restaurar visibilidad de las que estaban ocultas
-            const ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            ocultas.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-            checkRestoreBtn();
+            actualizarListaDiasOcultos();
         }
 
-        // --- LÓGICA DE OCULTAR / RESTAURAR ---
-        function ocultarOficina(rowId) {
-            const row = document.getElementById(rowId);
-            row.style.display = 'none';
+        // --- LÓGICA DE OCULTAR / MOSTRAR ---
+        function ocultarOficina(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
             
-            let ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            if (!ocultas.includes(rowId)) {
-                ocultas.push(rowId);
-                localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultas));
+            let ocultos = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            if (!ocultos.includes(id)) {
+                ocultos.push(id);
+                localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
             }
-            checkRestoreBtn();
+            actualizarListaDiasOcultos();
         }
 
-        function restoreAll() {
-            localStorage.removeItem('oficinas_ocultas');
-            document.querySelectorAll('tr').forEach(tr => tr.style.display = 'table-row');
-            document.getElementById('restoreBtn').style.display = 'none';
+        function restaurarDia(fecha) {
+            const oficinasDia = datosGlobales.filter(o => o.fecha === fecha);
+            let ocultos = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            
+            oficinasDia.forEach(ofi => {
+                ocultos = ocultos.filter(id => id !== ofi.id);
+                const el = document.getElementById(ofi.id);
+                if (el) el.classList.remove('hidden');
+            });
+            
+            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
+            actualizarListaDiasOcultos();
         }
 
-        function checkRestoreBtn() {
-            const ocultas = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            document.getElementById('restoreBtn').style.display = ocultas.length > 0 ? 'block' : 'none';
+        function actualizarListaDiasOcultos() {
+            const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+            const section = document.getElementById('hiddenDaysSection');
+            const list = document.getElementById('hiddenDaysList');
+            
+            list.innerHTML = '';
+            
+            if (ocultosIds.length > 0) {
+                section.style.display = 'block';
+                
+                const fechasAfectadas = new Set();
+                datosGlobales.forEach(ofi => {
+                    if (ocultosIds.includes(ofi.id)) {
+                        fechasAfectadas.add(ofi.fecha);
+                    }
+                });
+
+                Array.from(fechasAfectadas).sort().forEach(fecha => {
+                    const dateFormatted = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                    const div = document.createElement('div');
+                    div.className = 'hidden-item';
+                    div.innerHTML = `
+                        <span style="font-weight: 600; color: var(--text-main);">${dateFormatted}</span>
+                        <button class="btn-restore-day" onclick="restaurarDia('${fecha}')">Restaurar Día</button>
+                    `;
+                    list.appendChild(div);
+                });
+            } else {
+                section.style.display = 'none';
+            }
         }
 
-        // --- LÓGICA DE DESCARGA DE IMAGEN ---
+        function abrirMenu() {
+            actualizarListaDiasOcultos();
+            document.getElementById('modalMenu').style.display = 'flex';
+        }
+
+        // --- DESCARGA DE IMAGEN ---
         function descargarImagen() {
             const btn = document.getElementById('downloadBtn');
             btn.innerText = "⏳ Generando...";
@@ -627,10 +601,10 @@
 
             html2canvas(document.getElementById('captureArea'), {
                 scale: 4,
-                backgroundColor: "#ffffff",
+                backgroundColor: "#f3f4f6",
                 useCORS: true,
                 ignoreElements: function(element) {
-                    return element.classList.contains('btn-check') || element.classList.contains('btn-start') || element.tagName === 'BUTTON';
+                    return element.hasAttribute('data-html2canvas-ignore') || element.tagName === 'BUTTON';
                 }
             }).then(canvas => {
                 const dataUrl = canvas.toDataURL('image/png');
@@ -649,16 +623,17 @@
                     document.getElementById('generatedImage').src = dataUrl;
                     document.getElementById('imageModal').style.display = 'flex';
                 }
-                btn.innerText = "📥 Descargar Imagen HD";
+                btn.innerText = "📥 Descargar Imagen";
                 btn.disabled = false;
             });
         }
 
-        // --- CARGAR DATOS GUARDADOS AL INICIAR ---
+        // --- CARGAR DATOS AL INICIAR ---
         window.onload = function() {
             const guardadas = localStorage.getItem('rutas_guardadas');
             if (guardadas) {
-                guardarYDibujar(JSON.parse(guardadas));
+                datosGlobales = JSON.parse(guardadas);
+                renderizarRutas();
             }
         };
     </script>
