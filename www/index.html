@@ -9,83 +9,331 @@
     <!-- Librería para descargar imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 5px; display: flex; flex-direction: column; align-items: center; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: var(--text-main);
+        }
         
         /* Barra Superior */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 650px; background-color: #1976d2; color: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
-        .app-title { font-weight: bold; font-size: 1.1em; }
-        .btn-menu { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; }
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+            max-width: 650px; 
+            background-color: var(--primary); 
+            color: white; 
+            padding: 16px 20px; 
+            box-sizing: border-box; 
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); 
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .app-title { font-weight: 700; font-size: 1.2em; letter-spacing: 0.5px; }
+        .btn-menu { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .btn-menu:active { background: rgba(255,255,255,0.4); }
+
+        /* Contenedor principal */
+        .main-content {
+            width: 100%;
+            max-width: 650px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        /* Controles */
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .btn-action { 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 14px 24px; 
+            font-size: 15px; 
+            font-weight: 600; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); 
+            transition: transform 0.1s, background 0.2s;
+            width: 100%;
+        }
+        .btn-action:active { transform: scale(0.98); background-color: var(--primary-dark); }
+
+        /* Diseño de Tarjetas (Semanas) */
+        .week-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .week-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Diseño de Días */
+        .day-section {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .day-section:last-child {
+            border-bottom: none;
+        }
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f9fafb;
+        }
+        .day-title {
+            font-weight: 700;
+            font-size: 1.05em;
+            color: var(--primary-dark);
+        }
+        .day-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-start {
+            background-color: var(--success);
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+
+        /* Diseño de Oficinas */
+        .office-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: opacity 0.3s;
+        }
+        .office-item:last-child {
+            border-bottom: none;
+        }
+        .office-item.hidden {
+            display: none;
+        }
+        .office-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .office-name {
+            font-weight: 700;
+            font-size: 1em;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.3;
+            padding-right: 10px;
+        }
+        .badge-type {
+            font-size: 0.7em;
+            background-color: #e0e7ff;
+            color: var(--primary-dark);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .btn-check {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .btn-check:active { background-color: #fca5a5; }
+        
+        .address-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+        .address-btn:active { background-color: #e5e7eb; }
+        .address-icon { margin-left: auto; font-size: 1.2em; }
+        .town-name {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         /* Menú Modal */
-        #modalMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background-color: white; width: 90%; max-width: 400px; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .modal-content h2 { margin-top: 0; color: #333; text-align: center; font-size: 1.2em; }
-        .modal-content label { display: block; background-color: #e3f2fd; color: #1565c0; padding: 15px; text-align: center; border-radius: 8px; font-weight: bold; border: 2px dashed #90caf9; cursor: pointer; margin-bottom: 15px; }
+        #modalMenu { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(4px);
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .modal-content { 
+            background-color: white; 
+            width: 90%; 
+            max-width: 400px; 
+            border-radius: 16px; 
+            padding: 24px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-top: 0; color: var(--text-main); text-align: center; font-size: 1.3em; font-weight: 700; margin-bottom: 20px; }
+        
+        .import-label { 
+            display: block; 
+            background-color: #eff6ff; 
+            color: var(--primary); 
+            padding: 20px; 
+            text-align: center; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            border: 2px dashed #93c5fd; 
+            cursor: pointer; 
+            margin-bottom: 20px; 
+            transition: background 0.2s;
+        }
+        .import-label:active { background-color: #dbeafe; }
         .modal-content input[type="file"] { display: none; }
-        .btn-close { width: 100%; background-color: #ef5350; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer; }
+        
+        /* Lista de días ocultos */
+        .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid #e5e7eb; padding-top: 15px;}
+        .hidden-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background-color: #f9fafb; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .btn-restore-day { 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 0.8em;
+            cursor: pointer;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+        .btn-restore-day:active { background-color: var(--primary-dark); }
 
-        /* Contenedores de la ruta */
-        .controls { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 650px; justify-content: center; }
-        .btn-action { background-color: #1976d2; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
-        .btn-restore { background-color: #7b1fa2; display: none; }
-
-        .container { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; width: 100%; max-width: 650px; }
-        
-        .week-header { background-color: #0277bd; color: white; padding: 12px 10px; font-weight: bold; font-size: 1.1em; text-align: center; text-transform: uppercase; margin-top: 10px; }
-        .week-header:first-of-type { margin-top: 0; }
-        .day-header { background-color: #e1f5fe; color: #01579b; padding: 10px; font-weight: bold; font-size: 1.05em; border-bottom: 1px solid #b3e5fc; display: flex; justify-content: space-between; align-items: center; }
-        
-        .btn-start { background-color: #2e7d32; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8em; font-weight: bold; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 5px; }
-        td { padding: 12px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
-        
-        .office-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
-        .name { font-weight: 700; color: #333; font-size: 1em; }
-        .type { font-size: 0.75em; background-color: #fce4ec; color: #c62828; padding: 2px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px; }
-        .btn-check { margin-left: auto; background: transparent; border: none; font-size: 1.2em; cursor: pointer; opacity: 0.6; }
-        
-        .address-link { display: inline-flex; align-items: center; font-size: 0.9em; color: #1565c0; font-weight: 600; text-decoration: none; background-color: #e3f2fd; padding: 5px 8px; border-radius: 4px; margin-top: 4px; border: 1px solid #bbdefb; }
-        .town { display: block; font-size: 0.85em; color: #757575; margin-top: 4px; font-weight: bold; text-transform: uppercase;}
+        .btn-close { 
+            width: 100%; 
+            background-color: #f3f4f6; 
+            color: var(--text-main); 
+            border: none; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 1em; 
+            cursor: pointer; 
+            margin-top: 15px;
+        }
 
         #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
-        #imageModal img { max-width: 100%; max-height: 80%; border-radius: 6px; }
-        #closeModalBtn { margin-top: 15px; padding: 10px 20px; border: none; border-radius: 6px; background-color: #fff; color: #333; font-weight: bold; }
+        #imageModal img { max-width: 100%; max-height: 80%; border-radius: 12px; }
     </style>
 </head>
 <body>
 
     <!-- BARRA SUPERIOR -->
     <div class="top-bar">
-        <span class="app-title">Planificación de Rutas</span>
-        <button class="btn-menu" onclick="document.getElementById('modalMenu').style.display='flex'">☰</button>
+        <span class="app-title">Mis Rutas</span>
+        <button class="btn-menu" onclick="abrirMenu()">☰</button>
     </div>
 
-    <!-- MENÚ DESPLEGABLE (IMPORTAR) -->
-    <div id="modalMenu">
-        <div class="modal-content">
-            <h2>Opciones</h2>
-            <label for="fileInput">
-                📂 Importar archivo Excel (.xlsx)<br>
-                <span style="font-size: 0.8em; font-weight: normal; color: #555;">Se filtrarán solo tus oficinas</span>
-            </label>
-            <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
-            <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar</button>
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="controls" data-html2canvas-ignore="true">
+            <button id="downloadBtn" class="btn-action" onclick="descargarImagen()">📥 Descargar Imagen</button>
+        </div>
+
+        <div id="captureArea">
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);" id="emptyState">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <h3 style="margin: 0 0 10px 0;">Sin rutas cargadas</h3>
+                <p style="font-size: 0.9em;">Abre el menú superior e importa tu Excel para empezar.</p>
+            </div>
         </div>
     </div>
 
-    <!-- CONTROLES -->
-    <div class="controls" data-html2canvas-ignore="true">
-        <button id="downloadBtn" class="btn-action" onclick="descargarImagen()">📥 Descargar Imagen HD</button>
-        <button id="restoreBtn" class="btn-action btn-restore" onclick="restoreAll()">🔄 Restaurar</button>
-    </div>
+    <!-- MENÚ MODAL -->
+    <div id="modalMenu">
+        <div class="modal-content">
+            <h2>Opciones</h2>
+            
+            <label for="fileInput" class="import-label">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Importar Excel (.xlsx)
+            </label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
 
-    <!-- AQUÍ SE PINTARÁ LA RUTA -->
-    <div class="container" id="captureArea">
-        <div style="padding: 20px; text-align: center; color: #757575;" id="emptyState">
-            <h3>No hay ninguna ruta cargada</h3>
-            <p>Pulsa el menú (☰) arriba a la derecha e importa tu archivo Excel.</p>
+            <!-- Sección de días ocultos -->
+            <div id="hiddenDaysSection" style="display: none;">
+                <div class="hidden-list-title">Días con oficinas ocultas</div>
+                <div id="hiddenDaysList"></div>
+            </div>
+
+            <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar Menú</button>
         </div>
     </div>
 
@@ -93,10 +341,12 @@
     <div id="imageModal">
         <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
         <img id="generatedImage" src="" alt="Ruta">
-        <button id="closeModalBtn" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
+        <button class="btn-close" style="width: auto; padding: 10px 20px; margin-top: 20px;" onclick="document.getElementById('imageModal').style.display='none'">Cerrar</button>
     </div>
 
     <script>
+        let datosGlobales = [];
+
         // --- LÓGICA DE IMPORTACIÓN DE EXCEL ---
         function handleFileUpload(event) {
             const file = event.target.files[0];
@@ -106,14 +356,8 @@
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                
-                // Leer la primera hoja (normalmente ESTUDIOS o PLANIFICACION)
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Convertir a JSON
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                
                 procesarDatosExcel(json);
             };
             reader.readAsArrayBuffer(file);
@@ -122,9 +366,8 @@
         function procesarDatosExcel(rows) {
             let oficinas = [];
             let headers = [];
-            
-            // Buscar la fila de cabeceras (donde pone TECNICO o NOMBRE)
             let headerRowIndex = -1;
+            
             for (let i = 0; i < rows.length; i++) {
                 if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
                     headers = rows[i].map(h => String(h).toUpperCase().trim());
@@ -138,15 +381,13 @@
                 return;
             }
 
-            // Obtener índices de las columnas
             const idxTecnico = headers.indexOf('TECNICO');
             const idxFecha = headers.findIndex(h => h.includes('FECHA'));
             const idxNombre = headers.indexOf('NOMBRE');
             const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
             const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
-            const idxTipo = headers.indexOf('TIPO'); // Para el archivo de renoves
+            const idxTipo = headers.indexOf('TIPO');
 
-            // Recorrer las filas de datos
             for (let i = headerRowIndex + 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
@@ -154,18 +395,112 @@
                 const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
                 const tipo = idxTipo !== -1 ? String(row[idxTipo]).toUpperCase().trim() : '';
 
-                // FILTRO: ERIK o archivos de ALTURA (Renoves)
-                let incluir = false;
-                if (idxTecnico !== -1) {
-                    if (tecnico === 'ERIK') incluir = true;
-                } else {
-                    incluir = true; // Archivo de Renoves
-                }
+                let incluir = (idxTecnico !== -1) ? (tecnico === 'ERIK') : true;
 
                 if (incluir) {
-                    // Formatear la fecha (viene como número de serie de Excel)
                     let fechaStr = "Sin Fecha";
                     if (row[idxFecha]) {
+                        if (typeof row[idxFecha] === 'number') {
+                            const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
+                            fechaStr = dateObj.toISOString().split('T')[0];
+                        } else {
+                            fechaStr = String(row[idxFecha]).split(' ')[0];
+                        }
+                    }
+
+                    oficinas.push({
+                        id: 'ofi-' + Math.random().toString(36).substr(2, 9), // ID único por oficina
+                        fecha: fechaStr,
+                        nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
+                        direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
+                        poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
+                        tipo: tipo
+                    });
+                }
+            }
+
+            if (oficinas.length > 0) {
+                datosGlobales = oficinas;
+                localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
+                localStorage.removeItem('oficinas_ocultas'); // Limpiamos ocultos al importar nueva ruta
+                document.getElementById('modalMenu').style.display='none';
+                renderizarRutas();
+            } else {
+                alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
+            }
+        }
+
+        // --- LÓGICA DE RENDERIZADO ---
+        function renderizarRutas() {
+            if (datosGlobales.length === 0) return;
+
+            const agrupadasPorFecha = {};
+            datosGlobales.forEach(o => {
+                if (!agrupadasPorFecha[o.fecha]) agrupadasPorFecha[o.fecha] = [];
+                agrupadasPorFecha[o.fecha].push(o);
+            });
+
+            const fechasOrdenadas = Object.keys(agrupadasPorFecha).sort();
+            const semanas = {};
+
+            fechasOrdenadas.forEach(fechaStr => {
+                if (fechaStr === 'Sin Fecha') return;
+                const date = new Date(fechaStr);
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Lunes
+                const lunes = new Date(date.setDate(diff));
+                const weekKey = lunes.toISOString().split('T')[0];
+                
+                if (!semanas[weekKey]) {
+                    semanas[weekKey] = { 
+                        inicio: new Date(lunes), 
+                        fin: new Date(lunes.getTime() + 6 * 86400000), 
+                        dias: {} 
+                    };
+                }
+                semanas[weekKey].dias[fechaStr] = agrupadasPorFecha[fechaStr];
+            });
+
+            const container = document.getElementById('captureArea');
+            container.innerHTML = ''; 
+            const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
+
+            const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+            Object.keys(semanas).sort().forEach(weekKey => {
+                const semana = semanas[weekKey];
+                const weekCard = document.createElement('div');
+                weekCard.className = 'week-card';
+
+                const weekHeader = document.createElement('div');
+                weekHeader.className = 'week-header';
+                weekHeader.innerText = `Semana del ${formatDate(semana.inicio)} al ${formatDate(semana.fin)}`;
+                weekCard.appendChild(weekHeader);
+
+                Object.keys(semana.dias).sort().forEach(fecha => {
+                    const oficinasDia = semana.dias[fecha];
+
+                    const daySection = document.createElement('div');
+                    daySection.className = 'day-section';
+
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    
+                    const dateFormatted = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+                    const dateCapitalized = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+                    const query = encodeURIComponent(oficinasDia[0].direccion + ', ' + oficinasDia[0].poblacion);
+
+                    dayHeader.innerHTML = `
+                        <span class="day-title">${dateCapitalized}</span>
+                        <div class="day-actions" data-html2canvas-ignore="true">
+                            <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start">🚀 1º</a>
+                        </div>
+                    `;
+                    daySection.appendChild(dayHeader);
+
+                    oficinasDia.forEach(ofi => {
+                        const q = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
+                        const badge = ofi.tipo ? `<span class="badge-type">${ofiecha]) {
                         if (typeof row[idxFecha] === 'number') {
                             const dateObj = new Date(Math.round((row[idxFecha] - 25569) * 86400 * 1000));
                             fechaStr = dateObj.toISOString().split('T')[0];
