@@ -111,13 +111,13 @@
 
     <div class="top-bar">
         <span class="app-title">Mis Rutas</span>
-        <button class="btn-menu" onclick="abrirMenu()">☰</button>
+        <button class="btn-menu" onclick="abrirMenu(event)">☰</button>
     </div>
 
     <div class="main-content">
         <div class="controls" data-html2canvas-ignore="true">
-            <button id="downloadBtn" class="btn-action btn-download" onclick="descargarImagen()">📥 Descargar</button>
-            <button id="shareBtn" class="btn-action btn-share" onclick="compartirImagen()">📤 Compartir</button>
+            <button id="downloadBtn" class="btn-action btn-download" onclick="descargarImagen(event)">📥 Descargar</button>
+            <button id="shareBtn" class="btn-action btn-share" onclick="compartirImagen(event)">📤 Compartir</button>
         </div>
 
         <div id="captureArea">
@@ -151,7 +151,7 @@
                 </label>
             </div>
 
-            <button class="btn-close" onclick="document.getElementById('modalMenu').style.display='none'">Cerrar Menú</button>
+            <button class="btn-close" onclick="cerrarMenu()">Cerrar Menú</button>
         </div>
     </div>
 
@@ -164,15 +164,28 @@
     <script>
         let datosGlobales = [];
 
+        // Funciones de Menú (Protegidas)
+        function abrirMenu(e) {
+            if(e) e.preventDefault();
+            document.getElementById('modalMenu').style.display = 'flex';
+            try { actualizarListaDiasOcultos(); } catch(err) { console.log(err); }
+        }
+
+        function cerrarMenu() {
+            document.getElementById('modalMenu').style.display = 'none';
+        }
+
         function toggleDarkMode() {
-            const isDark = document.getElementById('themeToggle').checked;
-            if (isDark) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            }
+            try {
+                const isDark = document.getElementById('themeToggle').checked;
+                if (isDark) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+            } catch(e) { console.log(e); }
         }
 
         function handleFileUpload(event) {
@@ -181,11 +194,15 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                procesarDatosExcel(json);
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    procesarDatosExcel(json);
+                } catch(err) {
+                    alert("Error al leer el archivo Excel.");
+                }
             };
             reader.readAsArrayBuffer(file);
         }
@@ -250,7 +267,7 @@
                 datosGlobales = oficinas;
                 localStorage.setItem('rutas_guardadas', JSON.stringify(oficinas));
                 localStorage.removeItem('oficinas_ocultas');
-                document.getElementById('modalMenu').style.display='none';
+                cerrarMenu();
                 renderizarRutas();
             } else {
                 alert("No se han encontrado oficinas tuyas (ERIK) en este archivo.");
@@ -316,13 +333,4 @@
                             <a href="https://waze.com/ul?q=${query}&navigate=yes" target="_blank" class="btn-start">🚀 1º</a>
                         </div>
                     `;
-                    daySection.appendChild(dayHeader);
-
-                    oficinasDia.forEach(ofi => {
-                        const q = encodeURIComponent(ofi.direccion + ', ' + ofi.poblacion);
-                        const badge = ofi.tipo ? `<span class="badge-type">${ofi.tipo}</span>` : '';
-                        const isHidden = ocultosIds.includes(ofi.id);
-                        
-                        const officeEl = document.createElement('div');
-                        officeEl.className = `office-item ${isHidden ? 'hidden' : ''}`;
-                      
+         
