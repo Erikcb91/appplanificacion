@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
     <title>Mis Rutas</title>
-    <!-- Librería para leer Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Librería para descargar imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-        /* VARIABLES DE COLOR */
         :root {
             --primary: #2563eb;
             --primary-dark: #1e40af;
@@ -46,267 +43,52 @@
             --modal-bg: #1f2937;
         }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow-x: hidden;
-        }
-
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--bg-color); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            color: var(--text-main);
-            transition: background-color 0.3s, color 0.3s;
-        }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); display: flex; flex-direction: column; align-items: center; color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
         
-        /* Barra Superior */
-        .top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%; 
-            max-width: 650px; 
-            background-color: var(--primary); 
-            color: white; 
-            padding: 16px 20px; 
-            box-sizing: border-box; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 650px; background-color: var(--primary); color: white; padding: 16px 20px; box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 50; }
         .app-title { font-weight: 700; font-size: 1.2em; letter-spacing: 0.5px; }
         .btn-menu { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .btn-menu:active { background: rgba(255,255,255,0.4); }
 
-        /* Contenedor principal */
-        .main-content {
-            width: 100%;
-            max-width: 650px;
-            padding: 15px;
-            box-sizing: border-box;
-            flex: 1;
-        }
-
-        /* Controles */
+        .main-content { width: 100%; max-width: 650px; padding: 15px; box-sizing: border-box; flex: 1; }
         .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .btn-action { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 14px 10px; 
-            font-size: 14px; 
-            font-weight: 600; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            transition: transform 0.1s, background 0.2s;
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-        }
+        .btn-action { background-color: var(--primary); color: white; border: none; padding: 14px 10px; font-size: 14px; font-weight: 600; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s, background 0.2s; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action:active { transform: scale(0.98); }
-        
         .btn-download { background-color: var(--primary); }
-        .btn-download:active { background-color: var(--primary-dark); }
-        
         .btn-share { background-color: var(--whatsapp); }
-        .btn-share:active { background-color: #128C7E; }
-
         .btn-action:disabled { background-color: #9ca3af !important; cursor: not-allowed; }
 
-        /* Diseño de Tarjetas (Semanas) */
-        .week-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: background-color 0.3s;
-        }
-        .week-header {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 20px;
-            font-weight: 700;
-            font-size: 1em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .week-card { background: var(--card-bg); border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; transition: background-color 0.3s; }
+        .week-header { background-color: var(--primary); color: white; padding: 12px 20px; font-weight: 700; font-size: 1em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .day-section { border-bottom: 1px solid var(--border-color); }
+        .day-section:last-child { border-bottom: none; }
+        .day-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: var(--day-header-bg); transition: background-color 0.3s; }
+        .day-title { font-weight: 700; font-size: 1.05em; color: var(--text-main); }
+        .day-actions { display: flex; gap: 8px; }
+        .btn-start { background-color: var(--success); color: white; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-size: 0.8em; font-weight: 600; display: flex; align-items: center; gap: 4px; }
 
-        /* Diseño de Días */
-        .day-section {
-            border-bottom: 1px solid var(--border-color);
-        }
-        .day-section:last-child {
-            border-bottom: none;
-        }
-        .day-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: var(--day-header-bg);
-            transition: background-color 0.3s;
-        }
-        .day-title {
-            font-weight: 700;
-            font-size: 1.05em;
-            color: var(--text-main);
-        }
-        .day-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-start {
-            background-color: var(--success);
-            color: white;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.8em;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* Diseño de Oficinas */
-        .office-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--item-border);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: opacity 0.3s, border-color 0.3s;
-        }
-        .office-item:last-child {
-            border-bottom: none;
-        }
-        .office-item.hidden {
-            display: none;
-        }
-        .office-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .office-name {
-            font-weight: 700;
-            font-size: 1em;
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.3;
-            padding-right: 10px;
-        }
-        .badge-type {
-            font-size: 0.7em;
-            background-color: #e0e7ff;
-            color: #1e40af;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        [data-theme="dark"] .badge-type {
-            background-color: #3730a3;
-            color: #e0e7ff;
-        }
-        .btn-check {
-            background-color: #fee2e2;
-            color: var(--danger);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        [data-theme="dark"] .btn-check {
-            background-color: #7f1d1d;
-            color: #fca5a5;
-        }
+        .office-item { padding: 15px 20px; border-bottom: 1px solid var(--item-border); display: flex; flex-direction: column; gap: 8px; transition: opacity 0.3s, border-color 0.3s; }
+        .office-item:last-child { border-bottom: none; }
+        .office-item.hidden { display: none; }
+        .office-info { display: flex; justify-content: space-between; align-items: flex-start; }
+        .office-name { font-weight: 700; font-size: 1em; color: var(--text-main); margin: 0; line-height: 1.3; padding-right: 10px; }
+        .badge-type { font-size: 0.7em; background-color: #e0e7ff; color: #1e40af; padding: 3px 8px; border-radius: 12px; font-weight: 700; text-transform: uppercase; }
+        [data-theme="dark"] .badge-type { background-color: #3730a3; color: #e0e7ff; }
+        .btn-check { background-color: #fee2e2; color: var(--danger); border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        [data-theme="dark"] .btn-check { background-color: #7f1d1d; color: #fca5a5; }
         
-        .address-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--btn-bg);
-            color: var(--text-main);
-            text-decoration: none;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            font-weight: 500;
-            margin-top: 4px;
-        }
+        .address-btn { display: inline-flex; align-items: center; background-color: var(--btn-bg); color: var(--text-main); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 0.9em; font-weight: 500; margin-top: 4px; }
         .address-icon { margin-left: auto; font-size: 1.2em; }
-        .town-name {
-            font-size: 0.8em;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .town-name { font-size: 0.8em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Menú Modal */
-        #modalMenu { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(4px);
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .modal-content { 
-            background-color: var(--modal-bg); 
-            color: var(--text-main);
-            width: 90%; 
-            max-width: 400px; 
-            border-radius: 16px; 
-            padding: 24px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
-            max-height: 80vh;
-            overflow-y: auto;
-        }
+        #modalMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--modal-bg); color: var(--text-main); width: 90%; max-width: 400px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto; }
         .modal-content h2 { margin-top: 0; color: var(--text-main); text-align: center; font-size: 1.3em; font-weight: 700; margin-bottom: 20px; }
-        
-        .import-label { 
-            display: block; 
-            background-color: var(--btn-bg); 
-            color: var(--text-main); 
-            padding: 20px; 
-            text-align: center; 
-            border-radius: 12px; 
-            font-weight: 600; 
-            border: 2px dashed var(--text-muted); 
-            cursor: pointer; 
-            margin-bottom: 20px; 
-        }
+        .import-label { display: block; background-color: var(--btn-bg); color: var(--text-main); padding: 20px; text-align: center; border-radius: 12px; font-weight: 600; border: 2px dashed var(--text-muted); cursor: pointer; margin-bottom: 20px; }
         .modal-content input[type="file"] { display: none; }
         
-        /* Modo Oscuro */
-        .theme-toggle-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-top: 1px solid var(--border-color);
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
+        .theme-toggle-container { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid var(--border-color); margin-top: 10px; margin-bottom: 10px; }
         .theme-label { font-weight: 600; font-size: 1em; }
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -315,41 +97,10 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(22px); }
         
-        /* Lista de días ocultos */
         .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid var(--border-color); padding-top: 15px;}
-        .hidden-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background-color: var(--btn-bg); 
-            padding: 12px; 
-            border-radius: 8px; 
-            margin-bottom: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .btn-restore-day { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            font-size: 0.8em;
-            cursor: pointer;
-        }
-
-        .btn-close { 
-            width: 100%; 
-            background-color: var(--btn-bg); 
-            color: var(--text-main); 
-            border: none; 
-            padding: 14px; 
-            border-radius: 12px; 
-            font-weight: 700; 
-            font-size: 1em; 
-            cursor: pointer; 
-            margin-top: 15px;
-        }
+        .hidden-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--btn-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); }
+        .btn-restore-day { background-color: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8em; cursor: pointer; }
+        .btn-close { width: 100%; background-color: var(--btn-bg); color: var(--text-main); border: none; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1em; cursor: pointer; margin-top: 15px; }
 
         #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         #imageModal p { color: white; text-align: center; font-weight: bold; margin-bottom: 15px; }
@@ -358,13 +109,11 @@
 </head>
 <body>
 
-    <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <span class="app-title">Mis Rutas</span>
         <button class="btn-menu" onclick="abrirMenu()">☰</button>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
         <div class="controls" data-html2canvas-ignore="true">
             <button id="downloadBtn" class="btn-action btn-download" onclick="descargarImagen()">📥 Descargar</button>
@@ -380,24 +129,20 @@
         </div>
     </div>
 
-    <!-- MENÚ MODAL -->
     <div id="modalMenu">
         <div class="modal-content">
             <h2>Opciones</h2>
-            
             <label for="fileInput" class="import-label">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 Importar Excel (.xlsx)
             </label>
             <input type="file" id="fileInput" accept=".xlsx, .xls" onchange="handleFileUpload(event)">
 
-            <!-- Sección de días ocultos -->
             <div id="hiddenDaysSection" style="display: none;">
                 <div class="hidden-list-title">Días con oficinas ocultas</div>
                 <div id="hiddenDaysList"></div>
             </div>
 
-            <!-- Interruptor Modo Oscuro -->
             <div class="theme-toggle-container">
                 <span class="theme-label">🌙 Modo Oscuro</span>
                 <label class="switch">
@@ -410,7 +155,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE IMAGEN -->
     <div id="imageModal">
         <p>Mantén pulsada la imagen y selecciona<br>"Guardar imagen" o "Añadir a Fotos"</p>
         <img id="generatedImage" src="" alt="Ruta">
@@ -420,7 +164,6 @@
     <script>
         let datosGlobales = [];
 
-        // --- LÓGICA DE MODO OSCURO ---
         function toggleDarkMode() {
             const isDark = document.getElementById('themeToggle').checked;
             if (isDark) {
@@ -432,7 +175,6 @@
             }
         }
 
-        // --- LÓGICA DE IMPORTACIÓN DE EXCEL ---
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -515,7 +257,6 @@
             }
         }
 
-        // --- LÓGICA DE RENDERIZADO ---
         function renderizarRutas() {
             if (datosGlobales.length === 0) return;
 
@@ -537,11 +278,7 @@
                 const weekKey = lunes.toISOString().split('T')[0];
                 
                 if (!semanas[weekKey]) {
-                    semanas[weekKey] = { 
-                        inicio: new Date(lunes), 
-                        fin: new Date(lunes.getTime() + 6 * 86400000), 
-                        dias: {} 
-                    };
+                    semanas[weekKey] = { inicio: new Date(lunes), fin: new Date(lunes.getTime() + 6 * 86400000), dias: {} };
                 }
                 semanas[weekKey].dias[fechaStr] = agrupadasPorFecha[fechaStr];
             });
@@ -549,7 +286,6 @@
             const container = document.getElementById('captureArea');
             container.innerHTML = ''; 
             const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-
             const formatDate = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 
             Object.keys(semanas).sort().forEach(weekKey => {
@@ -564,7 +300,6 @@
 
                 Object.keys(semana.dias).sort().forEach(fecha => {
                     const oficinasDia = semana.dias[fecha];
-
                     const daySection = document.createElement('div');
                     daySection.className = 'day-section';
 
@@ -590,182 +325,4 @@
                         
                         const officeEl = document.createElement('div');
                         officeEl.className = `office-item ${isHidden ? 'hidden' : ''}`;
-                        officeEl.id = ofi.id;
-                        
-                        officeEl.innerHTML = `
-                            <div class="office-info">
-                                <p class="office-name">${ofi.nombre} ${badge}</p>
-                                <button class="btn-check" data-html2canvas-ignore="true" onclick="ocultarOficina('${ofi.id}')">❌</button>
-                            </div>
-                            <span class="town-name">${ofi.poblacion}</span>
-                            <a href="https://waze.com/ul?q=${q}&navigate=yes" target="_blank" class="address-btn">
-                                ${ofi.direccion} <span class="address-icon">🧭</span>
-                            </a>
-                        `;
-                        daySection.appendChild(officeEl);
-                    });
-
-                    weekCard.appendChild(daySection);
-                });
-
-                container.appendChild(weekCard);
-            });
-
-            actualizarListaDiasOcultos();
-        }
-
-        // --- LÓGICA DE OCULTAR / MOSTRAR ---
-        function ocultarOficina(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
-            
-            let ocultos = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            if (!ocultos.includes(id)) {
-                ocultos.push(id);
-                localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
-            }
-            actualizarListaDiasOcultos();
-        }
-
-        function restaurarDia(fecha) {
-            const oficinasDia = datosGlobales.filter(o => o.fecha === fecha);
-            let ocultos = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            
-            oficinasDia.forEach(ofi => {
-                ocultos = ocultos.filter(id => id !== ofi.id);
-                const el = document.getElementById(ofi.id);
-                if (el) el.classList.remove('hidden');
-            });
-            
-            localStorage.setItem('oficinas_ocultas', JSON.stringify(ocultos));
-            actualizarListaDiasOcultos();
-        }
-
-        function actualizarListaDiasOcultos() {
-            const ocultosIds = JSON.parse(localStorage.getItem('oficinas_ocultas') || '[]');
-            const section = document.getElementById('hiddenDaysSection');
-            const list = document.getElementById('hiddenDaysList');
-            
-            list.innerHTML = '';
-            
-            if (ocultosIds.length > 0) {
-                section.style.display = 'block';
-                
-                const fechasAfectadas = new Set();
-                datosGlobales.forEach(ofi => {
-                    if (ocultosIds.includes(ofi.id)) {
-                        fechasAfectadas.add(ofi.fecha);
-                    }
-                });
-
-                Array.from(fechasAfectadas).sort().forEach(fecha => {
-                    const dateFormatted = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-                    const div = document.createElement('div');
-                    div.className = 'hidden-item';
-                    div.innerHTML = `
-                        <span style="font-weight: 600; color: var(--text-main);">${dateFormatted}</span>
-                        <button class="btn-restore-day" onclick="restaurarDia('${fecha}')">Restaurar Día</button>
-                    `;
-                    list.appendChild(div);
-                });
-            } else {
-                section.style.display = 'none';
-            }
-        }
-
-        function abrirMenu() {
-            actualizarListaDiasOcultos();
-            document.getElementById('modalMenu').style.display = 'flex';
-        }
-
-        // --- GENERACIÓN DE IMAGEN ---
-        function generarCanvas() {
-            const bgColor = getComputedStyle(document.body).backgroundColor;
-            
-            return html2canvas(document.getElementById('captureArea'), {
-                scale: 4,
-                backgroundColor: bgColor,
-                useCORS: true,
-                ignoreElements: function(element) {
-                    return element.hasAttribute('data-html2canvas-ignore') || element.tagName === 'BUTTON';
-                }
-            });
-        }
-
-        // --- DESCARGA DE IMAGEN ---
-        function descargarImagen() {
-            const btn = document.getElementById('downloadBtn');
-            btn.innerHTML = "⏳...";
-            btn.disabled = true;
-
-            generarCanvas().then(canvas => {
-                const dataUrl = canvas.toDataURL('image/png');
-                try {
-                    let link = document.createElement('a');
-                    link.download = 'Mi_Ruta.png';
-                    link.href = dataUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } catch (error) {
-                    document.getElementById('generatedImage').src = dataUrl;
-                    document.getElementById('imageModal').style.display = 'flex';
-                }
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                    document.getElementById('generatedImage').src = dataUrl;
-                    document.getElementById('imageModal').style.display = 'flex';
-                }
-                btn.innerHTML = "📥 Descargar";
-                btn.disabled = false;
-            });
-        }
-
-        // --- COMPARTIR IMAGEN ---
-        function compartirImagen() {
-            const btn = document.getElementById('shareBtn');
-            btn.innerHTML = "⏳...";
-            btn.disabled = true;
-
-            generarCanvas().then(canvas => {
-                canvas.toBlob(blob => {
-                    const file = new File([blob], 'Mi_Ruta.png', { type: 'image/png' });
-                    
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        navigator.share({
-                            files: [file],
-                            title: 'Mi Ruta',
-                            text: 'Aquí tienes mi planificación de ruta.'
-                        }).then(() => {
-                            btn.innerHTML = "📤 Compartir";
-                            btn.disabled = false;
-                        }).catch((error) => {
-                            console.log('Error al compartir', error);
-                            btn.innerHTML = "📤 Compartir";
-                            btn.disabled = false;
-                        });
-                    } else {
-                        alert("Tu móvil no soporta compartir directamente. Usa el botón 'Descargar'.");
-                        btn.innerHTML = "📤 Compartir";
-                        btn.disabled = false;
-                    }
-                }, 'image/png');
-            });
-        }
-
-        // --- CARGAR DATOS AL INICIAR ---
-        window.onload = function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.getElementById('themeToggle').checked = true;
-            }
-
-            const guardadas = localStorage.getItem('rutas_guardadas');
-            if (guardadas) {
-                datosGlobales = JSON.parse(guardadas);
-                renderizarRutas();
-            }
-        };
-    </script>
-</body>
-</html>
+                      
