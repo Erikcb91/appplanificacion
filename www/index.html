@@ -83,6 +83,7 @@
         
         .address-btn { display: inline-flex; align-items: center; background-color: var(--btn-bg); color: var(--text-main); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 0.9em; font-weight: 500; margin-top: 4px; }
         .address-icon { margin-left: auto; font-size: 1.2em; }
+        .ap-count { color: var(--primary); font-weight: 800; text-transform: none; }
         .town-name { font-size: 0.8em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
         #modalMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
@@ -499,6 +500,19 @@
         }
 
         // --- HTML ---
+        // «3», 3, «3.0», «3 APs» → 3 ; vacío o 0 → ''
+        function numAps(v) {
+            if (v === undefined || v === null || v === '') return '';
+            const m = String(v).replace(',', '.').match(/\d+(\.\d+)?/);
+            const n = m ? Math.round(parseFloat(m[0])) : 0;
+            return n > 0 ? n : '';
+        }
+        // «RENOVE EN ALTURA» → «Renove en altura»
+        function tipoBonito(t) {
+            t = String(t || '').trim().toLowerCase();
+            return t.charAt(0).toUpperCase() + t.slice(1);
+        }
+
         function htmlOficina(o, interactivo) {
             const hora = visitadas[o.id];
             const esManana = !!mananas[o.id];
@@ -509,7 +523,8 @@
             const direccion = o.direccion
                 ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
                 : '';
-            const poblacion = o.poblacion ? `<span class="town-name">${esc(o.poblacion)}</span>` : '';
+            const apsTxt = o.aps ? `${o.aps} AP${o.aps > 1 ? 's' : ''}` : '';
+            const poblacion = (o.poblacion || apsTxt) ? `<span class="town-name">${esc(o.poblacion || '')}${o.poblacion && apsTxt ? ' · ' : ''}${apsTxt ? `<b class="ap-count">${apsTxt}</b>` : ''}</span>` : '';
             const marcas = (esManana ? `<span class="tag-manana">☀ Por la mañana</span> ` : '') +
                            (hora ? `<span class="visit-time">✓ Visitada a las ${esc(hora)}</span>` : '');
             return `
@@ -634,7 +649,7 @@
             const buscando = query.trim() !== '';
             if (buscando) {
                 const q = norm(query.trim());
-                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.fecha].join(' ')).includes(q));
+                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.aps ? o.aps + ' ap' : '', o.fecha].join(' ')).includes(q));
             }
             const modoDia = !buscando && vista === 'dia';
             const modoSemana = !buscando && vista === 'semana';
@@ -808,6 +823,11 @@
             const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
             const idxTipo = headers.indexOf('TIPO');
             const idxProv = headers.findIndex(h => h.includes('PROVINCIA'));
+            // Columna con el número de APs: «APS», «AP», «Nº APs», «Nº de AP», «Access Points»…
+            const idxAps = headers.findIndex(h => {
+                const n = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return /(^|[^A-Z])APS?([^A-Z]|$)/.test(n) || n.includes('ACCESS') || n.includes('ACCESO');
+            });
             const usados = {};
 
             for (let i = headerRowIndex + 1; i < rows.length; i++) {
@@ -835,7 +855,8 @@
                     direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
                     poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
                     provincia: idxProv !== -1 && row[idxProv] ? tituloProv(row[idxProv]) : '',
-                    tipo: tipo
+                    tipo: tipo,
+                    aps: idxAps !== -1 ? numAps(row[idxAps]) : ''
                 };
                 asegurarId(o);
                 usados[o.id] = (usados[o.id] || 0) + 1;
@@ -1023,7 +1044,7 @@
                 .filter(o => !ocultos.includes(o.id))
                 .map(o => {
                     const f = fechaIso(o);
-                    return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0 } : null;
+                    return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', t: tipoBonito(o.tipo), a: o.aps || 0, v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
             try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos), texto: multTam('Widget'), check: multTam('Check') })).catch(() => {}); } catch (e) {}

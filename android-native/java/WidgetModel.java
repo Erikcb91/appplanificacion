@@ -29,6 +29,8 @@ final class WidgetModel {
         String d = "";
         String pv = "";
         String v = "";
+        String t = "";   // tipo: Renove, 2ª visita…
+        int a = 0;        // número de APs
         boolean m = false;
 
         boolean visitada() {
@@ -53,6 +55,8 @@ final class WidgetModel {
                 it.p = o.optString("p");
                 it.d = o.optString("d");
                 it.pv = o.optString("pv");
+                it.t = o.optString("t");
+                it.a = o.optInt("a", 0);
                 String v = o.optString("v");
                 // formato antiguo: 0 / 1
                 if ("0".equals(v)) v = "";
@@ -79,6 +83,8 @@ final class WidgetModel {
                 o.put("p", it.p);
                 o.put("d", it.d);
                 o.put("pv", it.pv);
+                o.put("t", it.t);
+                o.put("a", it.a);
                 o.put("v", it.v);
                 o.put("m", it.m ? 1 : 0);
                 arr.put(o);
