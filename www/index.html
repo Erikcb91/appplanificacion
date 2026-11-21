@@ -166,6 +166,10 @@
         .tag-manana { font-size: 0.78em; font-weight: 700; color: #b45309; }
         [data-theme="dark"] .tag-manana { color: #fcd34d; }
 
+        /* Provincias del día: subtítulo discreto bajo la fecha */
+        .day-titles { min-width: 0; }
+        .day-prov { display: block; margin-top: 2px; font-size: 0.72em; font-weight: 600; letter-spacing: 0.3px; color: var(--text-muted); opacity: 0.85; }
+
         /* ===== Selector de exportación ===== */
         #modalExport { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
         .export-option { display: block; width: 100%; text-align: left; background-color: var(--btn-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
@@ -230,6 +234,14 @@
             </div>
 
             <div class="theme-toggle-container">
+                <span class="theme-label">📍 Mostrar provincias</span>
+                <label class="switch">
+                    <input type="checkbox" id="provToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="theme-toggle-container" style="margin-top: 0; border-top: none; padding-top: 0;">
                 <span class="theme-label">🌙 Modo Oscuro</span>
                 <label class="switch">
                     <input type="checkbox" id="themeToggle">
@@ -281,6 +293,7 @@
         let vista = 'dia';        // 'dia' | 'todo'
         let diaSel = '';          // día mostrado en la vista Día (AAAA-MM-DD)
         let query = '';           // texto del buscador
+        let mostrarProv = true;   // mostrar provincias en las cabeceras de día
         let opcionesExport = [];
         let accionExport = 'compartir';
 
@@ -329,6 +342,11 @@
             let h = 5381;
             for (let i = 0; i < txt.length; i++) h = ((h << 5) + h + txt.charCodeAt(i)) | 0;
             return (h >>> 0).toString(36);
+        }
+        function tituloProv(s) {
+            return String(s).trim().toLowerCase()
+                .replace(/(^|[\s\/\-(])([a-záéíóúüñç])/g, (m, a, b) => a + b.toUpperCase())
+                .replace(/ (De|Del|La|Las|Los|El|Y|I|E)(?= |$)/g, (m) => m.toLowerCase());
         }
         function asegurarId(o) {
             if (!o.id) o.id = 'ofi-' + hashId(o.fecha + '|' + o.nombre + '|' + o.direccion);
@@ -407,6 +425,8 @@
             if (!oficinas.length) return '';
             const hechas = oficinas.filter(o => visitadas[o.id]).length;
             const pend = oficinas.find(o => !visitadas[o.id]);
+            const provs = mostrarProv ? [...new Set(oficinas.map(o => o.provincia).filter(Boolean))] : [];
+            const provsHtml = provs.length ? `<span class="day-prov">📍 ${provs.map(esc).join(' · ')}</span>` : '';
             let acciones = `<span class="chip${hechas === oficinas.length ? ' ok' : ''}">${hechas}/${oficinas.length}</span>`;
             if (interactivo && pend) {
                 acciones += `<a class="btn-start" href="${wazeUrl(pend)}" target="_blank" rel="noopener" data-html2canvas-ignore="true">🚀 ${hechas ? 'Siguiente' : 'Ir al 1º'}</a>`;
@@ -414,7 +434,7 @@
             return `
                 <div class="day-section">
                     <div class="day-header">
-                        <span class="day-title">${esc(titulo)}</span>
+                        <div class="day-titles"><span class="day-title">${esc(titulo)}</span>${provsHtml}</div>
                         <div class="day-actions">${acciones}</div>
                     </div>
                     ${oficinas.map(o => htmlOficina(o, interactivo)).join('')}
@@ -497,7 +517,7 @@
             const buscando = query.trim() !== '';
             if (buscando) {
                 const q = norm(query.trim());
-                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.tipo, o.fecha].join(' ')).includes(q));
+                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.fecha].join(' ')).includes(q));
             }
             const modoDia = !buscando && vista === 'dia';
             if (modoDia) lista = lista.filter(o => fechaIso(o) === diaSel);
@@ -656,6 +676,7 @@
             const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
             const idxPob = headers.indexOf('POBLACIÓN') !== -1 ? headers.indexOf('POBLACIÓN') : headers.indexOf('POBLACION');
             const idxTipo = headers.indexOf('TIPO');
+            const idxProv = headers.findIndex(h => h.includes('PROVINCIA'));
             const usados = {};
 
             for (let i = headerRowIndex + 1; i < rows.length; i++) {
@@ -682,6 +703,7 @@
                     nombre: row[idxNombre] ? String(row[idxNombre]).trim() : 'Sin Nombre',
                     direccion: idxDir !== -1 && row[idxDir] ? String(row[idxDir]).trim() : '',
                     poblacion: idxPob !== -1 && row[idxPob] ? String(row[idxPob]).trim() : '',
+                    provincia: idxProv !== -1 && row[idxProv] ? tituloProv(row[idxProv]) : '',
                     tipo: tipo
                 };
                 asegurarId(o);
@@ -866,7 +888,7 @@
                 .filter(o => !ocultos.includes(o.id))
                 .map(o => {
                     const f = fechaIso(o);
-                    return f ? { f: f, n: o.nombre, p: o.poblacion, d: o.direccion, v: visitadas[o.id] ? 1 : 0, m: mananas[o.id] ? 1 : 0 } : null;
+                    return f ? { f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', v: visitadas[o.id] ? 1 : 0, m: mananas[o.id] ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
             try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos) })).catch(() => {}); } catch (e) {}
@@ -882,6 +904,12 @@
             $('btnCloseImage').addEventListener('click', () => { $('imageModal').style.display = 'none'; });
             $('fileInput').addEventListener('change', handleFileUpload);
             $('themeToggle').addEventListener('change', toggleDarkMode);
+            $('provToggle').addEventListener('change', (e) => {
+                mostrarProv = e.target.checked;
+                try { localStorage.setItem('mostrarProv', mostrarProv ? '1' : '0'); } catch (err) {}
+                renderizar();
+                actualizarWidget();
+            });
 
             $('exportOpciones').addEventListener('click', (e) => {
                 const b = e.target.closest('[data-opcion]');
@@ -920,6 +948,8 @@
                 $('themeToggle').checked = true;
             }
             vista = localStorage.getItem('vista') === 'todo' ? 'todo' : 'dia';
+            mostrarProv = localStorage.getItem('mostrarProv') !== '0';
+            $('provToggle').checked = mostrarProv;
             datosGlobales = leerJSON('rutas_guardadas', []).map(asegurarId);
             ocultos = leerJSON('oficinas_ocultas', []);
             visitadas = leerJSON('oficinas_visitadas', {});
