@@ -113,7 +113,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         final float t = WidgetStore.textoMul(ctx);
         v.setTextViewTextSize(R.id.widget_titulo, sp, 13 * k * t);
         v.setTextViewTextSize(R.id.widget_prov, sp, 9.5f * k * t);
-        v.setTextViewTextSize(R.id.widget_resumen, sp, 9.5f * k * t);
+        v.setTextViewTextSize(R.id.widget_resumen, sp, 11.5f * k * t);
         v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
         v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
         v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
