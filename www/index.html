@@ -208,6 +208,12 @@
         .export-option { display: block; width: 100%; text-align: left; background-color: var(--btn-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
         .export-option span { display: block; font-size: 0.82em; color: var(--text-muted); margin-top: 2px; }
 
+        /* Ajustes de tamaño */
+        .size-block { padding: 10px 0; border-top: 1px solid var(--border-color); }
+        .size-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
+        .size-head span { font-weight: 500; font-size: 0.85em; color: var(--text-muted); }
+        .size-range { width: 100%; margin: 0; accent-color: var(--primary); }
+
         /* Área oculta donde se dibuja lo que se exporta como imagen */
         #exportArea { position: fixed; left: -10000px; top: 0; width: 520px; padding: 12px; box-sizing: border-box; background-color: var(--bg-color); color: var(--text-main); font-family: inherit; }
     </style>
@@ -275,7 +281,20 @@
                 </label>
             </div>
 
-            <div class="theme-toggle-container" style="margin-top: 0; border-top: none; padding-top: 0;">
+            <div class="size-block">
+                <div class="size-head">🔠 Texto de la app <span id="tamAppTxt">Normal</span></div>
+                <input type="range" class="size-range" id="tamApp" min="-2" max="2" step="1" value="0">
+            </div>
+            <div class="size-block">
+                <div class="size-head">📱 Texto del widget <span id="tamWidgetTxt">Normal</span></div>
+                <input type="range" class="size-range" id="tamWidget" min="-2" max="2" step="1" value="0">
+            </div>
+            <div class="size-block">
+                <div class="size-head">✓ Botón del widget <span id="tamCheckTxt">Normal</span></div>
+                <input type="range" class="size-range" id="tamCheck" min="-2" max="2" step="1" value="0">
+            </div>
+
+            <div class="theme-toggle-container" style="margin-top: 0; padding-top: 15px;">
                 <span class="theme-label">🌙 Modo Oscuro</span>
                 <label class="switch">
                     <input type="checkbox" id="themeToggle">
@@ -320,6 +339,19 @@
             </div>`;
 
         // --- ESTADO ---
+        // Tamaños (-2..2): texto de la app, texto del widget y botón ✓ del widget
+        const MULT = [0.8, 0.9, 1, 1.1, 1.25];
+        const NOMBRES_TAM = ['Muy pequeño', 'Pequeño', 'Normal', 'Grande', 'Muy grande'];
+        const tam = { App: 0, Widget: 0, Check: 0 };
+        function multTam(k) { return MULT[tam[k] + 2]; }
+        function aplicarTamApp() {
+            document.documentElement.style.zoom = String(multTam('App'));
+        }
+        function pintarTam(k) {
+            const t = $('tam' + k + 'Txt');
+            if (t) t.textContent = NOMBRES_TAM[tam[k] + 2];
+        }
+
         let datosGlobales = [];   // oficinas importadas
         let ocultos = [];         // ids ocultos (✕)
         let visitadas = {};       // id -> hora "HH:MM"
@@ -888,6 +920,8 @@
                 throw new Error('La librería para generar la imagen no se ha cargado. Revisa tu conexión a internet.');
             }
             const area = $('exportArea');
+            const zoomPrevio = document.documentElement.style.zoom;
+            document.documentElement.style.zoom = '1';
             area.innerHTML = html;
             try {
                 const alto = area.scrollHeight || 1;
@@ -906,6 +940,7 @@
                 return canvas.toDataURL('image/png');
             } finally {
                 area.innerHTML = '';
+                document.documentElement.style.zoom = zoomPrevio;
             }
         }
 
@@ -987,7 +1022,7 @@
                     return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
-            try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos) })).catch(() => {}); } catch (e) {}
+            try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos), texto: multTam('Widget'), check: multTam('Check') })).catch(() => {}); } catch (e) {}
         }
 
         // Recoge lo marcado desde el widget (oficinas visitadas) y lo aplica a la app
@@ -1025,6 +1060,14 @@
             $('btnCloseImage').addEventListener('click', () => { $('imageModal').style.display = 'none'; });
             $('fileInput').addEventListener('change', handleFileUpload);
             $('themeToggle').addEventListener('change', toggleDarkMode);
+            ['App', 'Widget', 'Check'].forEach(k => {
+                $('tam' + k).addEventListener('input', (e) => {
+                    tam[k] = parseInt(e.target.value, 10) || 0;
+                    try { localStorage.setItem('tam' + k, String(tam[k])); } catch (err) {}
+                    pintarTam(k);
+                    if (k === 'App') aplicarTamApp(); else actualizarWidget();
+                });
+            });
             $('provToggle').addEventListener('change', (e) => {
                 mostrarProv = e.target.checked;
                 try { localStorage.setItem('mostrarProv', mostrarProv ? '1' : '0'); } catch (err) {}
@@ -1087,6 +1130,14 @@
             }
             const vGuardada = localStorage.getItem('vista');
             vista = (vGuardada === 'todo' || vGuardada === 'semana') ? vGuardada : 'dia';
+            ['App', 'Widget', 'Check'].forEach(k => {
+                let v = 0;
+                try { v = parseInt(localStorage.getItem('tam' + k), 10); } catch (err) {}
+                tam[k] = (v >= -2 && v <= 2) ? v : 0;
+                $('tam' + k).value = String(tam[k]);
+                pintarTam(k);
+            });
+            aplicarTamApp();
             mostrarProv = localStorage.getItem('mostrarProv') !== '0';
             $('provToggle').checked = mostrarProv;
             datosGlobales = leerJSON('rutas_guardadas', []).map(asegurarId);

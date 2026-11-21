@@ -30,6 +30,19 @@ final class WidgetStore {
         prefs(ctx).edit().putString(KEY, json).apply();
     }
 
+    /** Multiplicadores elegidos en el menú de la app (1 = normal). */
+    static float textoMul(Context ctx) {
+        return prefs(ctx).getFloat("texto_mul", 1f);
+    }
+
+    static float checkMul(Context ctx) {
+        return prefs(ctx).getFloat("check_mul", 1f);
+    }
+
+    static void guardarAjustes(Context ctx, float texto, float check) {
+        prefs(ctx).edit().putFloat("texto_mul", texto).putFloat("check_mul", check).apply();
+    }
+
     static float escala(Context ctx) {
         return prefs(ctx).getFloat("escala", 1f);
     }

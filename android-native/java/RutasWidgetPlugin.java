@@ -21,6 +21,11 @@ public class RutasWidgetPlugin extends Plugin {
         String datos = call.getString("datos", "[]");
         Context ctx = getContext();
         WidgetStore.guardar(ctx, datos);
+        Float texto = call.getFloat("texto", 1f);
+        Float check = call.getFloat("check", 1f);
+        WidgetStore.guardarAjustes(ctx,
+                Math.max(0.5f, Math.min(2f, texto == null ? 1f : texto)),
+                Math.max(0.5f, Math.min(2f, check == null ? 1f : check)));
         RutasWidgetProvider.actualizarTodos(ctx);
         call.resolve();
     }

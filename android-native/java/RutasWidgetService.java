@@ -81,15 +81,17 @@ public class RutasWidgetService extends RemoteViewsService {
         private RemoteViews vistaOficina(WidgetModel.Item it) {
             RemoteViews r = new RemoteViews(ctx.getPackageName(), R.layout.widget_item);
             float k = WidgetStore.escala(ctx);
+            float t = WidgetStore.textoMul(ctx);
+            float c = WidgetStore.checkMul(ctx);
             int pad = Math.round(11 * k * ctx.getResources().getDisplayMetrics().density);
             r.setViewPadding(R.id.item_root, Math.round(12 * k * ctx.getResources().getDisplayMetrics().density),
                     pad, Math.round(8 * k * ctx.getResources().getDisplayMetrics().density), pad);
-            r.setTextViewTextSize(R.id.item_nombre, android.util.TypedValue.COMPLEX_UNIT_SP, 12 * k);
-            r.setTextViewTextSize(R.id.item_detalle, android.util.TypedValue.COMPLEX_UNIT_SP, 9.5f * k);
-            r.setTextViewTextSize(R.id.item_check, android.util.TypedValue.COMPLEX_UNIT_SP, 14 * k);
+            r.setTextViewTextSize(R.id.item_nombre, android.util.TypedValue.COMPLEX_UNIT_SP, 12 * k * t);
+            r.setTextViewTextSize(R.id.item_detalle, android.util.TypedValue.COMPLEX_UNIT_SP, 9.5f * k * t);
+            r.setTextViewTextSize(R.id.item_check, android.util.TypedValue.COMPLEX_UNIT_SP, 14 * k * c);
             if (android.os.Build.VERSION.SDK_INT >= 31) {
-                r.setViewLayoutWidth(R.id.item_check, 28 * k, android.util.TypedValue.COMPLEX_UNIT_DIP);
-                r.setViewLayoutHeight(R.id.item_check, 28 * k, android.util.TypedValue.COMPLEX_UNIT_DIP);
+                r.setViewLayoutWidth(R.id.item_check, 28 * k * c, android.util.TypedValue.COMPLEX_UNIT_DIP);
+                r.setViewLayoutHeight(R.id.item_check, 28 * k * c, android.util.TypedValue.COMPLEX_UNIT_DIP);
             }
             r.setTextViewText(R.id.item_nombre, (it.m ? "☀ " : "") + it.n);
             String detalle = it.d.isEmpty() ? it.p : (it.p.isEmpty() ? it.d : it.d + ", " + it.p);
