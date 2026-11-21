@@ -1,0 +1,150 @@
+package com.erik.rutas;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.view.View;
+import android.widget.RemoteViews;
+
+import java.util.Calendar;
+import java.util.List;
+
+/**
+ * Widget "mini app": cabecera con día y flechas, barra de progreso de la semana y una lista
+ * con los días siguientes y sus oficinas pendientes (cuanto más alto el widget, más días).
+ * Marcar una oficina como visitada la quita de la lista. Sábado y domingo parte del lunes.
+ */
+public class RutasWidgetProvider extends AppWidgetProvider {
+
+    static final String ACCION_PREV = "com.erik.rutas.WIDGET_PREV";
+    static final String ACCION_NEXT = "com.erik.rutas.WIDGET_NEXT";
+    static final String ACCION_HOY = "com.erik.rutas.WIDGET_HOY";
+    static final String ACCION_UP = "com.erik.rutas.WIDGET_UP";
+    static final String ACCION_DOWN = "com.erik.rutas.WIDGET_DOWN";
+
+    /** Filas que se desplaza la lista con las flechas ▲ ▼. */
+    static final int SALTO_FILAS = 3;
+
+    @Override
+    public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
+        refrescar(ctx, mgr, ids);
+    }
+
+    @Override
+    public void onReceive(Context ctx, Intent intent) {
+        super.onReceive(ctx, intent);
+        String accion = intent.getAction();
+        if (accion == null) return;
+
+        if (ACCION_PREV.equals(accion) || ACCION_NEXT.equals(accion)) {
+            Calendar ahora = Calendar.getInstance();
+            List<WidgetModel.Item> items = WidgetModel.parse(WidgetStore.leer(ctx));
+            String actual = WidgetModel.diaMostrado(WidgetStore.diaSel(ctx), WidgetStore.diaSelEn(ctx), ahora);
+            String destino = WidgetModel.vecino(items, actual, ACCION_PREV.equals(accion) ? -1 : 1);
+            if (destino != null) {
+                WidgetStore.elegirDia(ctx, destino, WidgetModel.iso(ahora));
+            }
+            actualizarTodos(ctx);
+        } else if (ACCION_HOY.equals(accion)) {
+            WidgetStore.limpiarDia(ctx);
+            actualizarTodos(ctx);
+        } else if (ACCION_UP.equals(accion) || ACCION_DOWN.equals(accion)) {
+            // Desplazamiento relativo de la lista, sin reconstruir el widget
+            AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
+            int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, RutasWidgetProvider.class));
+            RemoteViews rv = new RemoteViews(ctx.getPackageName(), R.layout.widget_rutas);
+            rv.setRelativeScrollPosition(R.id.widget_lista, ACCION_UP.equals(accion) ? -SALTO_FILAS : SALTO_FILAS);
+            mgr.partiallyUpdateAppWidget(ids, rv);
+        }
+    }
+
+    public static void actualizarTodos(Context ctx) {
+        AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
+        int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, RutasWidgetProvider.class));
+        refrescar(ctx, mgr, ids);
+    }
+
+    private static void refrescar(Context ctx, AppWidgetManager mgr, int[] ids) {
+        for (int id : ids) {
+            mgr.updateAppWidget(id, construir(ctx, id));
+        }
+        mgr.notifyAppWidgetViewDataChanged(ids, R.id.widget_lista);
+    }
+
+    private static PendingIntent broadcast(Context ctx, int codigo, String accion) {
+        Intent i = new Intent(ctx, RutasWidgetProvider.class);
+        i.setAction(accion);
+        return PendingIntent.getBroadcast(ctx, codigo, i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private static RemoteViews construir(Context ctx, int widgetId) {
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_rutas);
+
+        Calendar ahora = Calendar.getInstance();
+        List<WidgetModel.Item> items = WidgetModel.parse(WidgetStore.leer(ctx));
+        String sel = WidgetStore.diaSel(ctx);
+        String selEn = WidgetStore.diaSelEn(ctx);
+        String dia = WidgetModel.diaMostrado(sel, selEn, ahora);
+        boolean manual = WidgetModel.esManual(sel, selEn, ahora);
+
+        // ----- cabecera -----
+        v.setTextViewText(R.id.widget_titulo, WidgetModel.etiquetaDia(dia, ahora, !manual));
+        v.setViewVisibility(R.id.widget_prev,
+                WidgetModel.vecino(items, dia, -1) != null ? View.VISIBLE : View.INVISIBLE);
+        v.setViewVisibility(R.id.widget_next,
+                WidgetModel.vecino(items, dia, 1) != null ? View.VISIBLE : View.INVISIBLE);
+        v.setViewVisibility(R.id.widget_hoy, manual ? View.VISIBLE : View.GONE);
+
+        // ----- progreso de la semana del día mostrado -----
+        int[] sw = WidgetModel.resumenSemana(items, dia);   // {hechas, total, pendientes mañana}
+        if (sw[1] == 0) {
+            v.setViewVisibility(R.id.widget_progreso, View.INVISIBLE);
+            v.setTextViewText(R.id.widget_resumen, "Sin oficinas esta semana");
+        } else {
+            v.setViewVisibility(R.id.widget_progreso, View.VISIBLE);
+            v.setProgressBar(R.id.widget_progreso, sw[1], sw[0], false);
+            String texto = "Semana " + WidgetModel.rangoSemana(dia) + ": " + sw[0] + " de " + sw[1];
+            if (sw[2] > 0) texto += "  ·  ☀ " + sw[2];
+            v.setTextViewText(R.id.widget_resumen, texto);
+        }
+
+        // ----- texto cuando la lista está vacía -----
+        boolean hay = WidgetModel.hayDesde(items, dia);
+        v.setTextViewText(R.id.widget_vacio, hay ? "✓ ¡Todo hecho!" : "No hay oficinas");
+
+        // ----- lista -----
+        Intent svc = new Intent(ctx, RutasWidgetService.class);
+        svc.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+        svc.setData(Uri.parse(svc.toUri(Intent.URI_INTENT_SCHEME)));
+        v.setRemoteAdapter(R.id.widget_lista, svc);
+        v.setEmptyView(R.id.widget_lista, R.id.widget_vacio);
+
+        // Toques en las filas: plantilla hacia la actividad intermedia (cada fila rellena
+        // si es "visitar" o "waze").
+        Intent plantilla = new Intent(ctx, WidgetActionActivity.class);
+        PendingIntent piPlantilla = PendingIntent.getActivity(ctx, 10, plantilla,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+        v.setPendingIntentTemplate(R.id.widget_lista, piPlantilla);
+
+        // ----- botones -----
+        v.setOnClickPendingIntent(R.id.widget_prev, broadcast(ctx, 1, ACCION_PREV));
+        v.setOnClickPendingIntent(R.id.widget_next, broadcast(ctx, 2, ACCION_NEXT));
+        v.setOnClickPendingIntent(R.id.widget_hoy, broadcast(ctx, 3, ACCION_HOY));
+        v.setOnClickPendingIntent(R.id.widget_up, broadcast(ctx, 5, ACCION_UP));
+        v.setOnClickPendingIntent(R.id.widget_down, broadcast(ctx, 6, ACCION_DOWN));
+
+        Intent abrir = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+        if (abrir != null) {
+            PendingIntent piAbrir = PendingIntent.getActivity(ctx, 4, abrir,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            v.setOnClickPendingIntent(R.id.widget_titulo, piAbrir);
+            v.setOnClickPendingIntent(R.id.widget_resumen, piAbrir);
+        }
+        return v;
+    }
+}

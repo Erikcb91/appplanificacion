@@ -170,6 +170,39 @@
         .day-titles { min-width: 0; }
         .day-prov { display: block; margin-top: 2px; font-size: 0.72em; font-weight: 600; letter-spacing: 0.3px; color: var(--text-muted); opacity: 0.85; }
 
+        /* ===== Semanas con color propio y días bien diferenciados ===== */
+        .week-card { --wk: 215; background-color: hsl(var(--wk) 35% 95%); }
+        .week-card .week-header { background-color: hsl(var(--wk) 72% 44%); }
+        .week-card .day-section,
+        .week-card .day-section:last-child {
+            margin: 12px 10px 0; border: 1px solid hsl(var(--wk) 40% 82%); border-left: 6px solid hsl(var(--wk) 68% 50%);
+            border-radius: 14px; overflow: hidden; background-color: hsl(var(--wk) 45% 99%); }
+        .week-card .day-section:last-child { margin-bottom: 12px; }
+        .week-card .day-header { background-color: hsl(var(--wk) 88% 93%); }
+        .week-card .day-section.alt { background-color: hsl(var(--wk) 45% 96.5%); }
+        .week-card .day-section.alt .day-header { background-color: hsl(var(--wk) 76% 86%); }
+        .week-card .day-title { color: hsl(var(--wk) 55% 22%); }
+        .day-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .day-badge { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; min-width: 44px; padding: 5px 6px; border-radius: 11px; background-color: hsl(var(--wk) 68% 46%); color: #fff; font-weight: 800; font-size: 1.15em; line-height: 1.05; }
+        .day-badge small { font-size: 0.5em; font-weight: 700; letter-spacing: 0.6px; opacity: 0.95; }
+        .day-badge.hoy { background-color: hsl(var(--wk) 72% 34%); box-shadow: 0 0 0 3px hsl(var(--wk) 85% 76%); }
+        .day-badge.hoy small { font-size: 0.56em; letter-spacing: 0.9px; }
+        .day-left { flex: 1; }
+        .day-title { white-space: nowrap; }
+        .day-titles { overflow: hidden; }
+        .day-actions { flex-shrink: 0; align-items: center; }
+        .btn-start { white-space: nowrap; }
+        [data-theme="dark"] .week-card { background-color: hsl(var(--wk) 22% 13%); }
+        [data-theme="dark"] .week-card .week-header { background-color: hsl(var(--wk) 55% 36%); }
+        [data-theme="dark"] .week-card .day-section,
+        [data-theme="dark"] .week-card .day-section:last-child { border-color: hsl(var(--wk) 28% 28%); border-left-color: hsl(var(--wk) 60% 55%); background-color: hsl(var(--wk) 20% 17%); }
+        [data-theme="dark"] .week-card .day-section.alt { background-color: hsl(var(--wk) 20% 20%); }
+        [data-theme="dark"] .week-card .day-header { background-color: hsl(var(--wk) 34% 24%); }
+        [data-theme="dark"] .week-card .day-section.alt .day-header { background-color: hsl(var(--wk) 34% 30%); }
+        [data-theme="dark"] .week-card .day-title { color: hsl(var(--wk) 80% 90%); }
+        [data-theme="dark"] .day-badge { background-color: hsl(var(--wk) 60% 45%); }
+        [data-theme="dark"] .day-badge.hoy { background-color: hsl(var(--wk) 65% 38%); box-shadow: 0 0 0 3px hsl(var(--wk) 55% 62%); }
+
         /* ===== Selector de exportación ===== */
         #modalExport { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
         .export-option { display: block; width: 100%; text-align: left; background-color: var(--btn-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
@@ -202,7 +235,8 @@
 
         <div class="view-switch" id="viewSwitch" style="display:none;">
             <button data-vista="dia" class="active">📅 Día</button>
-            <button data-vista="todo">🗂 Todos los días</button>
+            <button data-vista="semana">🗓 Semana</button>
+            <button data-vista="todo">🗂 Todo</button>
         </div>
 
         <div class="day-nav" id="dayNav" style="display:none;">
@@ -290,8 +324,9 @@
         let ocultos = [];         // ids ocultos (✕)
         let visitadas = {};       // id -> hora "HH:MM"
         let mananas = {};         // id -> 1 (hay que hacerla por la mañana)
-        let vista = 'dia';        // 'dia' | 'todo'
+        let vista = 'dia';        // 'dia' | 'semana' | 'todo'
         let diaSel = '';          // día mostrado en la vista Día (AAAA-MM-DD)
+        let semanaSel = '';       // lunes de la semana mostrada en la vista Semana (AAAA-MM-DD)
         let query = '';           // texto del buscador
         let mostrarProv = true;   // mostrar provincias en las cabeceras de día
         let opcionesExport = [];
@@ -330,6 +365,10 @@
             return d ? isoLocal(d) : null;
         }
         const fmtCorta = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+        function nombreDiaCorto(d) {
+            const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).replace('.', '');
+            return t.charAt(0).toUpperCase() + t.slice(1);
+        }
         function nombreDia(d) {
             const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
             return t.charAt(0).toUpperCase() + t.slice(1);
@@ -373,6 +412,39 @@
             const dias = diasDisponibles();
             const destino = dir < 0 ? [...dias].reverse().find(d => d < diaSel) : dias.find(d => d > diaSel);
             if (destino) { diaSel = destino; renderizar(); }
+        }
+
+        // --- SEMANAS ---
+        function lunesIso(iso) {
+            const d = parseFecha(iso);
+            if (!d) return '';
+            const dow = d.getDay();
+            return isoLocal(new Date(d.getFullYear(), d.getMonth(), d.getDate() - (dow === 0 ? 6 : dow - 1)));
+        }
+        function semanaDe(o) { const f = fechaIso(o); return f ? lunesIso(f) : null; }
+        function semanasDisponibles() {
+            const s = new Set();
+            datosGlobales.forEach(o => { if (ocultos.includes(o.id)) return; const k = semanaDe(o); if (k) s.add(k); });
+            return [...s].sort();
+        }
+        // La primera semana que aún tiene oficinas de hoy en adelante; si no hay, la última
+        function semanaPorDefecto() {
+            const hoy = hoyIso();
+            const sem = semanasDisponibles();
+            const vigente = sem.find(k => datosGlobales.some(o => !ocultos.includes(o.id) && semanaDe(o) === k && fechaIso(o) >= hoy));
+            return vigente || sem[sem.length - 1] || lunesIso(hoy);
+        }
+        function moverSemana(dir) {
+            const sem = semanasDisponibles();
+            const destino = dir < 0 ? [...sem].reverse().find(k => k < semanaSel) : sem.find(k => k > semanaSel);
+            if (destino) { semanaSel = destino; renderizar(); }
+        }
+        // Cada semana tiene siempre el mismo color, en cualquier vista
+        const HUES = [215, 160, 275, 335, 190];
+        function hueSemana(lunes) {
+            const d = parseFecha(lunes);
+            if (!d) return HUES[0];
+            return HUES[Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 604800000) % HUES.length];
         }
 
         // --- AGRUPACIÓN ---
@@ -421,7 +493,7 @@
                 </div>`;
         }
 
-        function htmlDia(titulo, oficinas, interactivo) {
+        function htmlDia(titulo, oficinas, interactivo, iso, alt) {
             if (!oficinas.length) return '';
             const hechas = oficinas.filter(o => visitadas[o.id]).length;
             const pend = oficinas.find(o => !visitadas[o.id]);
@@ -429,12 +501,20 @@
             const provsHtml = provs.length ? `<span class="day-prov">📍 ${provs.map(esc).join(' · ')}</span>` : '';
             let acciones = `<span class="chip${hechas === oficinas.length ? ' ok' : ''}">${hechas}/${oficinas.length}</span>`;
             if (interactivo && pend) {
-                acciones += `<a class="btn-start" href="${wazeUrl(pend)}" target="_blank" rel="noopener" data-html2canvas-ignore="true">🚀 ${hechas ? 'Siguiente' : 'Ir al 1º'}</a>`;
+                acciones += `<a class="btn-start" href="${wazeUrl(pend)}" target="_blank" rel="noopener" data-html2canvas-ignore="true" title="Ir a la siguiente oficina pendiente">🚀 Ir</a>`;
             }
+            let badge = '';
+            const d = iso ? parseFecha(iso) : null;
+            if (d) {
+                const ab = d.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '').toUpperCase();
+                const esHoy = iso === hoyIso();
+                badge = `<span class="day-badge${esHoy ? ' hoy' : ''}"><small>${esHoy ? 'HOY' : esc(ab)}</small>${d.getDate()}</span>`;
+            }
+            const tit = d ? nombreDiaCorto(d) : titulo;
             return `
-                <div class="day-section">
+                <div class="day-section${alt ? ' alt' : ''}">
                     <div class="day-header">
-                        <div class="day-titles"><span class="day-title">${esc(titulo)}</span>${provsHtml}</div>
+                        <div class="day-left">${badge}<div class="day-titles"><span class="day-title">${esc(tit)}</span>${provsHtml}</div></div>
                         <div class="day-actions">${acciones}</div>
                     </div>
                     ${oficinas.map(o => htmlOficina(o, interactivo)).join('')}
@@ -443,10 +523,10 @@
 
         function htmlSemana(sem, interactivo) {
             const dias = Object.keys(sem.dias).sort()
-                .map(f => htmlDia(nombreDia(parseFecha(f)), sem.dias[f], interactivo)).join('');
+                .map((f, i) => htmlDia(nombreDia(parseFecha(f)), sem.dias[f], interactivo, f, i % 2 === 1)).join('');
             if (!dias) return '';
             return `
-                <div class="week-card">
+                <div class="week-card" style="--wk:${hueSemana(isoLocal(sem.inicio))}">
                     <div class="week-header">Semana del ${fmtCorta(sem.inicio)} al ${fmtCorta(sem.fin)}</div>
                     ${dias}
                 </div>`;
@@ -467,7 +547,8 @@
             const ordenada = lista.slice().sort((a, b) => (fechaIso(a) || '9999').localeCompare(fechaIso(b) || '9999'));
             const sig = ordenada.find(o => !visitadas[o.id]);
             const titulo = modo === 'busqueda' ? `${total} resultado${total > 1 ? 's' : ''}`
-                         : modo === 'dia' ? 'Resumen del día' : 'Resumen total';
+                         : modo === 'dia' ? 'Resumen del día'
+                         : modo === 'semana' ? 'Resumen de la semana' : 'Resumen total';
             const horas = lista.map(o => visitadas[o.id]).filter(Boolean).sort();
             const pendManana = lista.filter(o => mananas[o.id] && !visitadas[o.id]).length;
 
@@ -520,14 +601,16 @@
                 lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.fecha].join(' ')).includes(q));
             }
             const modoDia = !buscando && vista === 'dia';
+            const modoSemana = !buscando && vista === 'semana';
             if (modoDia) lista = lista.filter(o => fechaIso(o) === diaSel);
+            if (modoSemana) lista = lista.filter(o => semanaDe(o) === semanaSel);
 
             $('btnLimpiarBusqueda').style.display = buscando ? 'block' : 'none';
             $('viewSwitch').style.display = buscando ? 'none' : 'flex';
             document.querySelectorAll('#viewSwitch button').forEach(b => b.classList.toggle('active', b.dataset.vista === vista));
 
-            // Navegación de días (solo vista Día)
-            $('dayNav').style.display = modoDia ? 'flex' : 'none';
+            // Navegación (vistas Día y Semana)
+            $('dayNav').style.display = (modoDia || modoSemana) ? 'flex' : 'none';
             if (modoDia) {
                 const dias = diasDisponibles();
                 const d = parseFecha(diaSel);
@@ -536,14 +619,26 @@
                 $('btnDiaNext').disabled = !dias.some(x => x > diaSel);
                 $('btnHoy').style.display = diaSel === hoyIso() ? 'none' : 'block';
             }
+            if (modoSemana) {
+                const sem = semanasDisponibles();
+                const ini = parseFecha(semanaSel);
+                const fin = ini ? new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6) : null;
+                const esta = semanaSel === lunesIso(hoyIso());
+                $('navLabel').innerHTML = (esta ? '<small>ESTA SEMANA</small>' : '') +
+                    (ini ? `Semana del ${fmtCorta(ini)} al ${fmtCorta(fin)}` : esc(semanaSel));
+                $('btnDiaPrev').disabled = !sem.some(k => k < semanaSel);
+                $('btnDiaNext').disabled = !sem.some(k => k > semanaSel);
+                $('btnHoy').style.display = esta ? 'none' : 'block';
+            }
 
-            const modo = buscando ? 'busqueda' : (modoDia ? 'dia' : 'todo');
+            const modo = buscando ? 'busqueda' : (modoDia ? 'dia' : (modoSemana ? 'semana' : 'todo'));
             $('resumenDia').innerHTML = htmlResumen(lista, modo);
 
             if (lista.length === 0) {
                 let msg;
                 if (buscando) msg = `Sin resultados para «${esc(query.trim())}»`;
                 else if (modoDia) msg = diaSel === hoyIso() ? 'Hoy no tienes oficinas 🎉' : 'No hay oficinas este día';
+                else if (modoSemana) msg = 'No hay oficinas esta semana';
                 else msg = 'Todas las oficinas están ocultas. Abre el menú para restaurarlas.';
                 cont.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);"><p style="margin:0;">${msg}</p></div>`;
                 return;
@@ -551,9 +646,9 @@
 
             if (modoDia) {
                 const d = parseFecha(diaSel);
-                cont.innerHTML = `<div class="week-card">${htmlDia(nombreDia(d), lista, true)}</div>`;
+                cont.innerHTML = `<div class="week-card" style="--wk:${hueSemana(lunesIso(diaSel))}">${htmlDia(nombreDia(d), lista, true, diaSel, false)}</div>`;
             } else {
-                cont.innerHTML = htmlAgrupado(agrupar(lista), true);
+                cont.innerHTML = htmlAgrupado(agrupar(lista), true);   // Semana y Todo
             }
         }
 
@@ -725,6 +820,7 @@
             Object.keys(visitadas).forEach(id => { if (!ids.has(id)) delete visitadas[id]; });
             Object.keys(mananas).forEach(id => { if (!ids.has(id)) delete mananas[id]; });
             diaSel = diaPorDefecto();
+            semanaSel = semanaPorDefecto();
             query = '';
             $('buscador').value = '';
             cerrarMenu();
@@ -774,7 +870,7 @@
             const lista = datosGlobales.filter(o => !ocultos.includes(o.id));
             if (op.tipo === 'dia') {
                 const d = lista.filter(o => fechaIso(o) === op.clave);
-                return `<div class="week-card">${htmlDia(nombreDia(parseFecha(op.clave)), d, false)}</div>`;
+                return `<div class="week-card" style="--wk:${hueSemana(lunesIso(op.clave))}">${htmlDia(nombreDia(parseFecha(op.clave)), d, false, op.clave, false)}</div>`;
             }
             const g = agrupar(lista);
             if (op.tipo === 'semana') return htmlSemana(g.semanas[op.clave], false);
@@ -888,10 +984,35 @@
                 .filter(o => !ocultos.includes(o.id))
                 .map(o => {
                     const f = fechaIso(o);
-                    return f ? { f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', v: visitadas[o.id] ? 1 : 0, m: mananas[o.id] ? 1 : 0 } : null;
+                    return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
             try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos) })).catch(() => {}); } catch (e) {}
+        }
+
+        // Recoge lo marcado desde el widget (oficinas visitadas) y lo aplica a la app
+        async function sincronizarDesdeWidget() {
+            if (!esNativo()) return false;
+            const W = plugin('RutasWidget');
+            if (!W || typeof W.obtener !== 'function') return false;
+            try {
+                const r = await W.obtener();
+                const lista = JSON.parse((r && r.datos) || '[]');
+                let cambios = false;
+                lista.forEach(it => {
+                    if (!it || !it.i) return;
+                    const nuevo = typeof it.v === 'string' ? it.v : '';
+                    const actual = visitadas[it.i] || '';
+                    if (nuevo !== actual) {
+                        if (nuevo) visitadas[it.i] = nuevo; else delete visitadas[it.i];
+                        cambios = true;
+                    }
+                });
+                return cambios;
+            } catch (e) { return false; }
+        }
+        async function alVolver() {
+            if (await sincronizarDesdeWidget()) cambio();
         }
 
         // --- ARRANQUE ---
@@ -922,13 +1043,30 @@
             $('btnLimpiarBusqueda').addEventListener('click', () => { query = ''; $('buscador').value = ''; renderizar(); });
 
             document.querySelectorAll('#viewSwitch button').forEach(b => b.addEventListener('click', () => {
-                vista = b.dataset.vista;
+                const nueva = b.dataset.vista;
+                if (nueva === 'semana') {
+                    // abre la semana del día que estabas viendo
+                    const k = lunesIso(diaSel);
+                    const sem = semanasDisponibles();
+                    semanaSel = sem.includes(k) ? k : (sem.find(s => s > k) || sem[sem.length - 1] || k);
+                } else if (nueva === 'dia' && vista === 'semana') {
+                    // abre un día de la semana que estabas viendo
+                    const dias = diasDisponibles().filter(d => lunesIso(d) === semanaSel);
+                    if (dias.length && !dias.includes(diaSel)) diaSel = dias.includes(hoyIso()) ? hoyIso() : dias[0];
+                }
+                vista = nueva;
                 try { localStorage.setItem('vista', vista); } catch (e) {}
                 renderizar();
             }));
-            $('btnDiaPrev').addEventListener('click', () => moverDia(-1));
-            $('btnDiaNext').addEventListener('click', () => moverDia(1));
-            $('btnHoy').addEventListener('click', () => { diaSel = hoyIso(); renderizar(); });
+            $('btnDiaPrev').addEventListener('click', () => (vista === 'semana' ? moverSemana(-1) : moverDia(-1)));
+            $('btnDiaNext').addEventListener('click', () => (vista === 'semana' ? moverSemana(1) : moverDia(1)));
+            $('btnHoy').addEventListener('click', () => {
+                if (vista === 'semana') semanaSel = lunesIso(hoyIso()); else diaSel = hoyIso();
+                renderizar();
+            });
+            // Al volver a la app, recoge lo que se marcó en el widget
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') alVolver(); });
+            window.addEventListener('focus', alVolver);
 
             // Los botones de cada oficina se crean al renderizar: delegación de eventos
             $('captureArea').addEventListener('click', (e) => {
@@ -947,7 +1085,8 @@
                 document.documentElement.setAttribute('data-theme', 'dark');
                 $('themeToggle').checked = true;
             }
-            vista = localStorage.getItem('vista') === 'todo' ? 'todo' : 'dia';
+            const vGuardada = localStorage.getItem('vista');
+            vista = (vGuardada === 'todo' || vGuardada === 'semana') ? vGuardada : 'dia';
             mostrarProv = localStorage.getItem('mostrarProv') !== '0';
             $('provToggle').checked = mostrarProv;
             datosGlobales = leerJSON('rutas_guardadas', []).map(asegurarId);
@@ -955,9 +1094,10 @@
             visitadas = leerJSON('oficinas_visitadas', {});
             mananas = leerJSON('oficinas_manana', {});
             diaSel = diaPorDefecto();
+            semanaSel = semanaPorDefecto();
 
             renderizar();
-            actualizarWidget();
+            alVolver().then(actualizarWidget);
         });
     </script>
 </body>
