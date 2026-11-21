@@ -134,24 +134,6 @@
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/widget_up"
-            android:layout_width="40dp"
-            android:layout_height="36dp"
-            android:gravity="center"
-            android:text="▲"
-            android:textColor="@color/w_primary"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/widget_down"
-            android:layout_width="40dp"
-            android:layout_height="36dp"
-            android:gravity="center"
-            android:text="▼"
-            android:textColor="@color/w_primary"
-            android:textSize="18sp" />
     </LinearLayout>
 
     <!-- Lista: días seguidos con sus oficinas pendientes -->

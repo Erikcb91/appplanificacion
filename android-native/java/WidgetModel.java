@@ -283,6 +283,13 @@ final class WidgetModel {
             f.item = it;
             filas.add(f);
         }
+        // Las de la mañana primero (sort estable: se respeta el orden del Excel dentro de cada grupo)
+        java.util.Collections.sort(filas, new java.util.Comparator<Fila>() {
+            @Override
+            public int compare(Fila a, Fila b) {
+                return (b.item.m ? 1 : 0) - (a.item.m ? 1 : 0);
+            }
+        });
         return filas;
     }
 

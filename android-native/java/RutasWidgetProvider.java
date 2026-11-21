@@ -23,11 +23,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
     static final String ACCION_PREV = "com.erik.rutas.WIDGET_PREV";
     static final String ACCION_NEXT = "com.erik.rutas.WIDGET_NEXT";
     static final String ACCION_HOY = "com.erik.rutas.WIDGET_HOY";
-    static final String ACCION_UP = "com.erik.rutas.WIDGET_UP";
-    static final String ACCION_DOWN = "com.erik.rutas.WIDGET_DOWN";
-
-    /** Filas que se desplaza la lista con las flechas ▲ ▼. */
-    static final int SALTO_FILAS = 3;
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -58,13 +53,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         } else if (ACCION_HOY.equals(accion)) {
             WidgetStore.limpiarDia(ctx);
             actualizarTodos(ctx);
-        } else if (ACCION_UP.equals(accion) || ACCION_DOWN.equals(accion)) {
-            // Desplazamiento relativo de la lista, sin reconstruir el widget
-            AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
-            int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, RutasWidgetProvider.class));
-            RemoteViews rv = new RemoteViews(ctx.getPackageName(), R.layout.widget_rutas);
-            rv.setRelativeScrollPosition(R.id.widget_lista, ACCION_UP.equals(accion) ? -SALTO_FILAS : SALTO_FILAS);
-            mgr.partiallyUpdateAppWidget(ids, rv);
         }
     }
 
@@ -129,16 +117,12 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
         v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
         v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
-        v.setTextViewTextSize(R.id.widget_up, sp, 16 * k);
-        v.setTextViewTextSize(R.id.widget_down, sp, 16 * k);
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             final int dp = android.util.TypedValue.COMPLEX_UNIT_DIP;
             v.setViewLayoutWidth(R.id.widget_prev, 38 * k, dp);
             v.setViewLayoutHeight(R.id.widget_prev, 38 * k, dp);
             v.setViewLayoutWidth(R.id.widget_next, 38 * k, dp);
             v.setViewLayoutHeight(R.id.widget_next, 38 * k, dp);
-            v.setViewLayoutHeight(R.id.widget_up, 30 * k, dp);
-            v.setViewLayoutHeight(R.id.widget_down, 30 * k, dp);
         }
 
         // ----- colores del día: los mismos que en la app (tono por semana) -----
@@ -156,8 +140,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextColor(R.id.widget_prov, cabFg);
         v.setTextColor(R.id.widget_prev, acento);
         v.setTextColor(R.id.widget_next, acento);
-        v.setTextColor(R.id.widget_up, acento);
-        v.setTextColor(R.id.widget_down, acento);
         List<WidgetModel.Item> delDia = WidgetModel.delDia(items, dia);
         String prov = WidgetModel.unir(WidgetModel.provincias(delDia), " · ");
         v.setTextViewText(R.id.widget_prov, (prov.isEmpty() ? "" : "📍 " + prov + "  ·  ")
@@ -198,8 +180,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.widget_prev, broadcast(ctx, 1, ACCION_PREV));
         v.setOnClickPendingIntent(R.id.widget_next, broadcast(ctx, 2, ACCION_NEXT));
         v.setOnClickPendingIntent(R.id.widget_hoy, broadcast(ctx, 3, ACCION_HOY));
-        v.setOnClickPendingIntent(R.id.widget_up, broadcast(ctx, 5, ACCION_UP));
-        v.setOnClickPendingIntent(R.id.widget_down, broadcast(ctx, 6, ACCION_DOWN));
 
         Intent abrir = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         if (abrir != null) {

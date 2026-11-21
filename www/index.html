@@ -505,8 +505,7 @@
             const badge = o.tipo ? `<span class="badge-type">${esc(o.tipo)}</span>` : '';
             const botones = interactivo ? `
                 <button class="btn-manana${esManana ? ' on' : ''}" data-manana="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar para la mañana" title="Por la mañana">☀</button>
-                <button class="btn-visit${hora ? ' on' : ''}" data-visitar="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar como visitada" title="Visitada">✓</button>
-                <button class="btn-check" data-ocultar="${o.id}" data-html2canvas-ignore="true" aria-label="Ocultar oficina" title="Ocultar">✕</button>` : '';
+                <button class="btn-visit${hora ? ' on' : ''}" data-visitar="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar como visitada" title="Visitada">✓</button>` : '';
             const direccion = o.direccion
                 ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
                 : '';
@@ -523,6 +522,11 @@
                     ${poblacion}
                     ${marcas ? `<div>${marcas}</div>` : ''}
                 </div>`;
+        }
+
+        // Las de la mañana van arriba dentro de cada día (se mantiene el orden del Excel dentro de cada grupo)
+        function porMananaPrimero(lista) {
+            return lista.filter(o => mananas[o.id]).concat(lista.filter(o => !mananas[o.id]));
         }
 
         function htmlDia(titulo, oficinas, interactivo, iso, alt) {
@@ -549,7 +553,7 @@
                         <div class="day-left">${badge}<div class="day-titles"><span class="day-title">${esc(tit)}</span>${provsHtml}</div></div>
                         <div class="day-actions">${acciones}</div>
                     </div>
-                    ${oficinas.map(o => htmlOficina(o, interactivo)).join('')}
+                    ${porMananaPrimero(oficinas).map(o => htmlOficina(o, interactivo)).join('')}
                 </div>`;
         }
 
