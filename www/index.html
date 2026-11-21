@@ -282,16 +282,16 @@
             </div>
 
             <div class="size-block">
-                <div class="size-head">🔠 Texto de la app <span id="tamAppTxt">Normal</span></div>
-                <input type="range" class="size-range" id="tamApp" min="-2" max="2" step="1" value="0">
+                <div class="size-head">🔠 Texto de la app <span id="tamAppTxt">100 %</span></div>
+                <input type="range" class="size-range" id="tamApp" min="-10" max="10" step="1" value="0">
             </div>
             <div class="size-block">
-                <div class="size-head">📱 Texto del widget <span id="tamWidgetTxt">Normal</span></div>
-                <input type="range" class="size-range" id="tamWidget" min="-2" max="2" step="1" value="0">
+                <div class="size-head">📱 Texto del widget <span id="tamWidgetTxt">100 %</span></div>
+                <input type="range" class="size-range" id="tamWidget" min="-10" max="10" step="1" value="0">
             </div>
             <div class="size-block">
-                <div class="size-head">✓ Botón del widget <span id="tamCheckTxt">Normal</span></div>
-                <input type="range" class="size-range" id="tamCheck" min="-2" max="2" step="1" value="0">
+                <div class="size-head">✓ Botón del widget <span id="tamCheckTxt">100 %</span></div>
+                <input type="range" class="size-range" id="tamCheck" min="-10" max="10" step="1" value="0">
             </div>
 
             <div class="theme-toggle-container" style="margin-top: 0; padding-top: 15px;">
@@ -340,16 +340,16 @@
 
         // --- ESTADO ---
         // Tamaños (-2..2): texto de la app, texto del widget y botón ✓ del widget
-        const MULT = [0.8, 0.9, 1, 1.1, 1.25];
-        const NOMBRES_TAM = ['Muy pequeño', 'Pequeño', 'Normal', 'Grande', 'Muy grande'];
+        // 21 pasos (-10..10): de 60 % a 150 %, 100 % = normal
         const tam = { App: 0, Widget: 0, Check: 0 };
-        function multTam(k) { return MULT[tam[k] + 2]; }
+        function multN(n) { return Math.round((n < 0 ? 1 + n * 0.04 : 1 + n * 0.05) * 100) / 100; }
+        function multTam(k) { return multN(tam[k]); }
         function aplicarTamApp() {
             document.documentElement.style.zoom = String(multTam('App'));
         }
         function pintarTam(k) {
             const t = $('tam' + k + 'Txt');
-            if (t) t.textContent = NOMBRES_TAM[tam[k] + 2];
+            if (t) t.textContent = Math.round(multTam(k) * 100) + ' %';
         }
 
         let datosGlobales = [];   // oficinas importadas
@@ -1063,7 +1063,7 @@
             ['App', 'Widget', 'Check'].forEach(k => {
                 $('tam' + k).addEventListener('input', (e) => {
                     tam[k] = parseInt(e.target.value, 10) || 0;
-                    try { localStorage.setItem('tam' + k, String(tam[k])); } catch (err) {}
+                    try { localStorage.setItem('tamN' + k, String(tam[k])); } catch (err) {}
                     pintarTam(k);
                     if (k === 'App') aplicarTamApp(); else actualizarWidget();
                 });
@@ -1132,8 +1132,8 @@
             vista = (vGuardada === 'todo' || vGuardada === 'semana') ? vGuardada : 'dia';
             ['App', 'Widget', 'Check'].forEach(k => {
                 let v = 0;
-                try { v = parseInt(localStorage.getItem('tam' + k), 10); } catch (err) {}
-                tam[k] = (v >= -2 && v <= 2) ? v : 0;
+                try { v = parseInt(localStorage.getItem('tamN' + k), 10); } catch (err) {}
+                tam[k] = (v >= -10 && v <= 10) ? v : 0;
                 $('tam' + k).value = String(tam[k]);
                 pintarTam(k);
             });
