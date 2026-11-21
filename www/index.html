@@ -84,6 +84,8 @@
         .address-btn { display: inline-flex; align-items: center; background-color: var(--btn-bg); color: var(--text-main); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 0.9em; font-weight: 500; margin-top: 4px; }
         .address-icon { margin-left: auto; font-size: 1.2em; }
         .ap-count { color: var(--primary); font-weight: 800; text-transform: none; }
+        .tipo-txt { color: #4338ca; font-weight: 800; text-transform: none; }
+        [data-theme="dark"] .tipo-txt { color: #a5b4fc; }
         .town-name { font-size: 0.8em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
         #modalMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
@@ -507,16 +509,22 @@
             const n = m ? Math.round(parseFloat(m[0])) : 0;
             return n > 0 ? n : '';
         }
-        // «RENOVE EN ALTURA» → «Renove en altura»
+        // «RENOVE AP´S EN ALTURA» → «Renove altura», «2ª VISITA» → «2ª visita»…
         function tipoBonito(t) {
-            t = String(t || '').trim().toLowerCase();
-            return t.charAt(0).toUpperCase() + t.slice(1);
+            const raw = String(t || '').trim();
+            if (!raw) return '';
+            const n = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+            if (n.includes('ALTURA')) return 'Renove altura';
+            if (n.includes('RENOVE')) return 'Renove';
+            if (n.includes('VISITA') || n.includes('SEGUNDA')) return '2ª visita';
+            if (n.includes('COBERTURA') || n.includes('ESTUDIO') || n.includes('MEDICION')) return 'Estudio cobertura';
+            const l = raw.toLowerCase();
+            return l.charAt(0).toUpperCase() + l.slice(1);
         }
 
         function htmlOficina(o, interactivo) {
             const hora = visitadas[o.id];
             const esManana = !!mananas[o.id];
-            const badge = o.tipo ? `<span class="badge-type">${esc(o.tipo)}</span>` : '';
             const botones = interactivo ? `
                 <button class="btn-manana${esManana ? ' on' : ''}" data-manana="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar para la mañana" title="Por la mañana">☀</button>
                 <button class="btn-visit${hora ? ' on' : ''}" data-visitar="${o.id}" data-html2canvas-ignore="true" aria-label="Marcar como visitada" title="Visitada">✓</button>` : '';
@@ -524,14 +532,18 @@
                 ? `<a class="address-btn" href="${wazeUrl(o)}" target="_blank" rel="noopener"><span>${esc(o.direccion)}</span><span class="address-icon">🧭</span></a>`
                 : '';
             const apsTxt = o.aps ? `${o.aps} AP${o.aps > 1 ? 's' : ''}` : '';
-            const poblacion = (o.poblacion || apsTxt) ? `<span class="town-name">${esc(o.poblacion || '')}${o.poblacion && apsTxt ? ' · ' : ''}${apsTxt ? `<b class="ap-count">${apsTxt}</b>` : ''}</span>` : '';
+            const tipoTxt = tipoBonito(o.tipo);
+            const meta = [o.poblacion ? esc(o.poblacion) : '',
+                          tipoTxt ? `<b class="tipo-txt">${esc(tipoTxt)}</b>` : '',
+                          apsTxt ? `<b class="ap-count">${apsTxt}</b>` : ''].filter(Boolean).join(' · ');
+            const poblacion = meta ? `<span class="town-name">${meta}</span>` : '';
             const marcas = (esManana ? `<span class="tag-manana">☀ Por la mañana</span> ` : '') +
                            (hora ? `<span class="visit-time">✓ Visitada a las ${esc(hora)}</span>` : '');
             return `
                 <div class="office-item${hora ? ' visited' : ''}${esManana ? ' manana' : ''}" id="${o.id}">
                     <div class="office-info">
                         <h4 class="office-name">${esc(o.nombre)}</h4>
-                        <div class="office-side">${badge}${botones}</div>
+                        <div class="office-side">${botones}</div>
                     </div>
                     ${direccion}
                     ${poblacion}
@@ -790,7 +802,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    procesarDatosExcel(json);
+                    procesarDatosExcel(json, file.name, workbook.SheetNames[0]);
                 } catch (err) {
                     alert("Error al procesar el archivo. Asegúrate de que es un Excel válido.");
                 }
@@ -799,14 +811,17 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function procesarDatosExcel(rows) {
+        function procesarDatosExcel(rows, nombreArchivo, nombreHoja) {
+            // Sin columna TIPO se deduce del nombre del archivo o de la hoja (RENOVE…, MEDICIONES/ESTUDIOS…)
+            const pista = (String(nombreArchivo || '') + ' ' + String(nombreHoja || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+            const tipoPorArchivo = /MEDICION|ESTUDIO|COBERTURA/.test(pista) ? 'ESTUDIO DE COBERTURA' : (/RENOVE/.test(pista) ? 'RENOVE' : '');
             const oficinas = [];
             let headers = [];
             let headerRowIndex = -1;
 
             for (let i = 0; i < rows.length; i++) {
                 if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('NOMBRE') || String(cell).toUpperCase().includes('TECNICO'))) {
-                    headers = rows[i].map(h => String(h).toUpperCase().trim());
+                    headers = Array.from(rows[i], h => String(h == null ? '' : h).toUpperCase().trim());   // Array.from rellena las celdas vacías (huecos)
                     headerRowIndex = i;
                     break;
                 }
@@ -816,7 +831,7 @@
                 return;
             }
 
-            const idxTecnico = headers.indexOf('TECNICO');
+            const idxTecnico = headers.findIndex(h => h.startsWith('TECNICO'));   // TECNICO o TECNICOS
             const idxFecha = headers.findIndex(h => h.includes('FECHA'));
             const idxNombre = headers.indexOf('NOMBRE');
             const idxDir = headers.indexOf('DIRECCIÓN') !== -1 ? headers.indexOf('DIRECCIÓN') : headers.indexOf('DIRECCION');
@@ -835,8 +850,9 @@
                 if (!row || row.length === 0) continue;
 
                 const tecnico = idxTecnico !== -1 ? String(row[idxTecnico]).toUpperCase().trim() : '';
-                const tipo = idxTipo !== -1 && row[idxTipo] ? String(row[idxTipo]).toUpperCase().trim() : '';
-                const incluir = (idxTecnico !== -1) ? (tecnico === 'ERIK') : true;
+                let tipo = idxTipo !== -1 && row[idxTipo] ? String(row[idxTipo]).toUpperCase().trim() : '';
+                if (!tipo) tipo = tipoPorArchivo;
+                const incluir = (idxTecnico !== -1) ? /(^|[^A-Z])ERIK([^A-Z]|$)/.test(tecnico) : true;   // «ERIK» o «EVIE Y ERIK»
                 if (!incluir) continue;
 
                 let fechaStr = "Sin Fecha";

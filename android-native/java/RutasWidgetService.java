@@ -95,26 +95,19 @@ public class RutasWidgetService extends RemoteViewsService {
             }
             r.setTextViewText(R.id.item_nombre, (it.m ? "☀ " : "") + it.n);
             String detalle = it.d.isEmpty() ? it.p : (it.p.isEmpty() ? it.d : it.d + ", " + it.p);
-            // Etiqueta al principio de la línea de la dirección: «Renove · 3 APs  ·  C. Mayor, 5…»
-            String etiqueta = "";
-            if (!it.t.isEmpty()) etiqueta = it.t;
+            r.setTextViewText(R.id.item_detalle, detalle);
+
+            // Tipo y nº de APs, a la derecha de la línea de la dirección: «Renove · 7 APs»
+            String etiqueta = it.t;
             if (it.a > 0) etiqueta += (etiqueta.isEmpty() ? "" : " · ") + it.a + (it.a == 1 ? " AP" : " APs");
-            CharSequence textoDetalle = detalle;
-            if (!etiqueta.isEmpty()) {
-                String completo = etiqueta + (detalle.isEmpty() ? "" : "  ·  " + detalle);
-                android.text.SpannableString sp = new android.text.SpannableString(completo);
-                boolean oscuro = (ctx.getResources().getConfiguration().uiMode
-                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-                int h = WidgetModel.hueSemana(it.f);
-                int colorEtiqueta = oscuro ? WidgetModel.hsl(h, 75, 78) : WidgetModel.hsl(h, 70, 35);
-                sp.setSpan(new android.text.style.ForegroundColorSpan(colorEtiqueta), 0, etiqueta.length(),
-                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sp.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, etiqueta.length(),
-                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                textoDetalle = sp;
-            }
-            r.setTextViewText(R.id.item_detalle, textoDetalle);
+            r.setTextViewText(R.id.item_etiqueta, etiqueta);
+            r.setViewVisibility(R.id.item_etiqueta, etiqueta.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+            r.setTextViewTextSize(R.id.item_etiqueta, android.util.TypedValue.COMPLEX_UNIT_SP, 9.5f * k * t);
+            boolean oscuro = (ctx.getResources().getConfiguration().uiMode
+                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                    == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            int hEt = WidgetModel.hueSemana(it.f);
+            r.setTextColor(R.id.item_etiqueta, oscuro ? WidgetModel.hsl(hEt, 75, 78) : WidgetModel.hsl(hEt, 70, 35));
             boolean noche = (ctx.getResources().getConfiguration().uiMode
                     & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
                     == android.content.res.Configuration.UI_MODE_NIGHT_YES;
