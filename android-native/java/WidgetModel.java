@@ -274,28 +274,51 @@ final class WidgetModel {
      * y esas oficinas. Las visitadas no aparecen; un día completado tampoco. Así, cuanto más
      * alto es el widget, más días se ven.
      */
-    static List<Fila> construirFilas(List<Item> items, String desde, Calendar ahora) {
+    /** Solo las oficinas pendientes del día indicado (sin cabeceras: el día va arriba). */
+    static List<Fila> construirFilas(List<Item> items, String dia, Calendar ahora) {
         List<Fila> filas = new ArrayList<Fila>();
-        for (String dia : dias(items)) {
-            if (dia.compareTo(desde) < 0) continue;
-            List<Item> delDia = delDia(items, dia);
-            int hechas = hechas(delDia);
-            if (hechas == delDia.size()) continue;
-            Fila h = new Fila();
-            h.cabecera = true;
-            h.titulo = etiquetaDia(dia, ahora, false);
-            h.provincias = unir(provincias(delDia), " · ");
-            h.hechas = hechas;
-            h.total = delDia.size();
-            filas.add(h);
-            for (Item it : delDia) {
-                if (it.visitada()) continue;
-                Fila f = new Fila();
-                f.item = it;
-                filas.add(f);
-            }
+        for (Item it : delDia(items, dia)) {
+            if (it.visitada()) continue;
+            Fila f = new Fila();
+            f.item = it;
+            filas.add(f);
         }
         return filas;
+    }
+
+    private static final int[] HUES = {215, 160, 275, 335, 190};
+
+    /** Mismo tono que la app: depende del número de semana (desde el lunes). */
+    static int hueSemana(String diaIso) {
+        String lunes = lunesDe(diaIso);
+        Calendar c = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        c.clear();
+        int[] d = ymd(lunes);
+        c.set(d[0], d[1] - 1, d[2]);
+        long semanas = Math.floorDiv(c.getTimeInMillis(), 604800000L);
+        return HUES[(int) Math.floorMod(semanas, (long) HUES.length)];
+    }
+
+    private static int[] ymd(String iso) {
+        String[] p = iso.split("-");
+        return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2])};
+    }
+
+    /** HSL (h 0-360, s y l 0-100) → color ARGB. */
+    static int hsl(int h, int s, int l) {
+        float S = s / 100f, L = l / 100f;
+        float c = (1 - Math.abs(2 * L - 1)) * S;
+        float hh = (h % 360) / 60f;
+        float x = c * (1 - Math.abs(hh % 2 - 1));
+        float r = 0, g = 0, b = 0;
+        if (hh < 1) { r = c; g = x; }
+        else if (hh < 2) { r = x; g = c; }
+        else if (hh < 3) { g = c; b = x; }
+        else if (hh < 4) { g = x; b = c; }
+        else if (hh < 5) { r = x; b = c; }
+        else { r = c; b = x; }
+        float m = L - c / 2;
+        return 0xFF000000 | (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255);
     }
 
     /** ¿Hay oficinas (aunque sean todas visitadas) desde ese día en adelante? */

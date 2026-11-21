@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Widget "mini app": cabecera con día y flechas, barra de progreso de la semana y una lista
- * con los días siguientes y sus oficinas pendientes (cuanto más alto el widget, más días).
+ * con las oficinas pendientes de ese día, con los colores de la semana de la app.
  * Marcar una oficina como visitada la quita de la lista. Sábado y domingo parte del lunes.
  */
 public class RutasWidgetProvider extends AppWidgetProvider {
@@ -100,6 +100,28 @@ public class RutasWidgetProvider extends AppWidgetProvider {
                 WidgetModel.vecino(items, dia, 1) != null ? View.VISIBLE : View.INVISIBLE);
         v.setViewVisibility(R.id.widget_hoy, manual ? View.VISIBLE : View.GONE);
 
+        // ----- colores del día: los mismos que en la app (tono por semana) -----
+        boolean noche = (ctx.getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        int hue = WidgetModel.hueSemana(dia);
+        int cabBg = noche ? WidgetModel.hsl(hue, 34, 27) : WidgetModel.hsl(hue, 76, 88);
+        int cabFg = noche ? WidgetModel.hsl(hue, 80, 90) : WidgetModel.hsl(hue, 55, 22);
+        int cuerpoBg = noche ? WidgetModel.hsl(hue, 20, 17) : WidgetModel.hsl(hue, 35, 95);
+        int acento = noche ? WidgetModel.hsl(hue, 70, 70) : WidgetModel.hsl(hue, 68, 40);
+        v.setInt(R.id.widget_cab, "setBackgroundColor", cabBg);
+        v.setInt(R.id.widget_cuerpo, "setBackgroundColor", cuerpoBg);
+        v.setTextColor(R.id.widget_titulo, cabFg);
+        v.setTextColor(R.id.widget_prov, cabFg);
+        v.setTextColor(R.id.widget_prev, acento);
+        v.setTextColor(R.id.widget_next, acento);
+        v.setTextColor(R.id.widget_up, acento);
+        v.setTextColor(R.id.widget_down, acento);
+        List<WidgetModel.Item> delDia = WidgetModel.delDia(items, dia);
+        String prov = WidgetModel.unir(WidgetModel.provincias(delDia), " · ");
+        v.setTextViewText(R.id.widget_prov, (prov.isEmpty() ? "" : "📍 " + prov + "  ·  ")
+                + WidgetModel.hechas(delDia) + "/" + delDia.size());
+
         // ----- progreso de la semana del día mostrado -----
         int[] sw = WidgetModel.resumenSemana(items, dia);   // {hechas, total, pendientes mañana}
         if (sw[1] == 0) {
@@ -114,7 +136,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         }
 
         // ----- texto cuando la lista está vacía -----
-        boolean hay = WidgetModel.hayDesde(items, dia);
+        boolean hay = !delDia.isEmpty();
         v.setTextViewText(R.id.widget_vacio, hay ? "✓ ¡Todo hecho!" : "No hay oficinas");
 
         // ----- lista -----
@@ -142,7 +164,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         if (abrir != null) {
             PendingIntent piAbrir = PendingIntent.getActivity(ctx, 4, abrir,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            v.setOnClickPendingIntent(R.id.widget_titulo, piAbrir);
+            v.setOnClickPendingIntent(R.id.widget_centro, piAbrir);
             v.setOnClickPendingIntent(R.id.widget_resumen, piAbrir);
         }
         return v;

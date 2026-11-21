@@ -4,11 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="10dp"
+    android:padding="6dp"
     android:background="@drawable/widget_bg">
 
     <!-- Cabecera: ‹ día › -->
     <LinearLayout
+        android:id="@+id/widget_cab"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -16,25 +17,44 @@
 
         <TextView
             android:id="@+id/widget_prev"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:gravity="center"
             android:text="‹"
             android:textColor="@color/w_primary"
             android:textSize="28sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/widget_titulo"
+        <LinearLayout
+            android:id="@+id/widget_centro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="@color/w_text"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/widget_titulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/w_text"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_prov"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/w_muted"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/widget_hoy"
@@ -53,8 +73,8 @@
 
         <TextView
             android:id="@+id/widget_next"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:gravity="center"
             android:text="›"
             android:textColor="@color/w_primary"
@@ -67,16 +87,16 @@
         android:id="@+id/widget_progreso"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="7dp"
-        android:layout_marginTop="2dp"
+        android:layout_height="6dp"
+        android:layout_marginTop="3dp"
         android:max="100"
         android:progress="0" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="2dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -93,7 +113,7 @@
         <TextView
             android:id="@+id/widget_up"
             android:layout_width="34dp"
-            android:layout_height="30dp"
+            android:layout_height="26dp"
             android:gravity="center"
             android:text="▲"
             android:textColor="@color/w_primary"
@@ -102,7 +122,7 @@
         <TextView
             android:id="@+id/widget_down"
             android:layout_width="34dp"
-            android:layout_height="30dp"
+            android:layout_height="26dp"
             android:gravity="center"
             android:text="▼"
             android:textColor="@color/w_primary"
@@ -111,6 +131,7 @@
 
     <!-- Lista: días seguidos con sus oficinas pendientes -->
     <FrameLayout
+        android:id="@+id/widget_cuerpo"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
@@ -120,8 +141,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:divider="@null"
-            android:dividerHeight="3dp"
-            android:scrollbars="none" />
+            android:dividerHeight="2dp"
+            android:scrollbars="none"
+            android:padding="3dp"
+            android:clipToPadding="false" />
 
         <TextView
             android:id="@+id/widget_vacio"
