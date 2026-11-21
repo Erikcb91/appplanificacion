@@ -122,9 +122,9 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         }
         WidgetStore.guardarEscala(ctx, k);
         final int sp = android.util.TypedValue.COMPLEX_UNIT_SP;
-        v.setTextViewTextSize(R.id.widget_titulo, sp, 17 * k);
-        v.setTextViewTextSize(R.id.widget_prov, sp, 12 * k);
-        v.setTextViewTextSize(R.id.widget_resumen, sp, 12 * k);
+        v.setTextViewTextSize(R.id.widget_titulo, sp, 14 * k);
+        v.setTextViewTextSize(R.id.widget_prov, sp, 10.5f * k);
+        v.setTextViewTextSize(R.id.widget_resumen, sp, 10.5f * k);
         v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
         v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
         v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
