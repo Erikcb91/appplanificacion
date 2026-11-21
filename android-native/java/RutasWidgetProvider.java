@@ -93,7 +93,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         boolean manual = WidgetModel.esManual(sel, selEn, ahora);
 
         // ----- cabecera -----
-        v.setTextViewText(R.id.widget_titulo, WidgetModel.etiquetaDia(dia, ahora, !manual));
+        v.setTextViewText(R.id.widget_titulo, WidgetModel.etiquetaDia(dia, ahora, dia.equals(WidgetModel.iso(WidgetModel.diaAuto(ahora)))));
         v.setViewVisibility(R.id.widget_prev,
                 WidgetModel.vecino(items, dia, -1) != null ? View.VISIBLE : View.INVISIBLE);
         v.setViewVisibility(R.id.widget_next,
@@ -109,8 +109,8 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         int cabFg = noche ? WidgetModel.hsl(hue, 80, 90) : WidgetModel.hsl(hue, 55, 22);
         int cuerpoBg = noche ? WidgetModel.hsl(hue, 20, 17) : WidgetModel.hsl(hue, 35, 95);
         int acento = noche ? WidgetModel.hsl(hue, 70, 70) : WidgetModel.hsl(hue, 68, 40);
-        v.setInt(R.id.widget_cab, "setBackgroundColor", cabBg);
-        v.setInt(R.id.widget_cuerpo, "setBackgroundColor", cuerpoBg);
+        v.setInt(R.id.widget_fondo, "setColorFilter", cuerpoBg);
+        v.setInt(R.id.widget_cab_fondo, "setColorFilter", cabBg);
         v.setTextColor(R.id.widget_titulo, cabFg);
         v.setTextColor(R.id.widget_prov, cabFg);
         v.setTextColor(R.id.widget_prev, acento);

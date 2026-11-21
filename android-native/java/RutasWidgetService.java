@@ -83,8 +83,13 @@ public class RutasWidgetService extends RemoteViewsService {
             r.setTextViewText(R.id.item_nombre, (it.m ? "☀ " : "") + it.n);
             String detalle = it.d.isEmpty() ? it.p : (it.p.isEmpty() ? it.d : it.d + ", " + it.p);
             r.setTextViewText(R.id.item_detalle, detalle);
-            r.setInt(R.id.item_root, "setBackgroundColor",
-                    ContextCompat.getColor(ctx, it.m ? R.color.w_manana : R.color.w_row));
+            boolean noche = (ctx.getResources().getConfiguration().uiMode
+                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                    == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            int hue = WidgetModel.hueSemana(it.f);
+            int fondo = it.m ? ContextCompat.getColor(ctx, R.color.w_manana)
+                    : (noche ? WidgetModel.hsl(hue, 22, 25) : 0xFFFFFFFF);
+            r.setInt(R.id.item_root, "setBackgroundColor", fondo);
 
             // ✓ marca como visitada (y la oficina desaparece); el resto de la fila abre Waze
             Intent visitar = new Intent();
