@@ -35,6 +35,12 @@ public class RutasWidgetProvider extends AppWidgetProvider {
     }
 
     @Override
+    public void onAppWidgetOptionsChanged(Context ctx, AppWidgetManager mgr, int id, android.os.Bundle opciones) {
+        super.onAppWidgetOptionsChanged(ctx, mgr, id, opciones);
+        refrescar(ctx, mgr, new int[]{id});
+    }
+
+    @Override
     public void onReceive(Context ctx, Intent intent) {
         super.onReceive(ctx, intent);
         String accion = intent.getAction();
@@ -70,7 +76,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
 
     private static void refrescar(Context ctx, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
-            mgr.updateAppWidget(id, construir(ctx, id));
+            mgr.updateAppWidget(id, construir(ctx, mgr, id));
         }
         mgr.notifyAppWidgetViewDataChanged(ids, R.id.widget_lista);
     }
@@ -82,7 +88,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    private static RemoteViews construir(Context ctx, int widgetId) {
+    private static RemoteViews construir(Context ctx, AppWidgetManager mgr, int widgetId) {
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_rutas);
 
         Calendar ahora = Calendar.getInstance();
@@ -99,6 +105,40 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setViewVisibility(R.id.widget_next,
                 WidgetModel.vecino(items, dia, 1) != null ? View.VISIBLE : View.INVISIBLE);
         v.setViewVisibility(R.id.widget_hoy, manual ? View.VISIBLE : View.GONE);
+
+        // ----- tamaño según la altura real del widget -----
+        float k = 1f;
+        try {
+            android.os.Bundle op = mgr.getAppWidgetOptions(widgetId);
+            if (op != null) {
+                boolean horizontal = ctx.getResources().getConfiguration().orientation
+                        == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+                int h = op.getInt(horizontal ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT
+                        : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                k = WidgetModel.escala(h);
+            }
+        } catch (Exception e) {
+            k = 1f;
+        }
+        WidgetStore.guardarEscala(ctx, k);
+        final int sp = android.util.TypedValue.COMPLEX_UNIT_SP;
+        v.setTextViewTextSize(R.id.widget_titulo, sp, 17 * k);
+        v.setTextViewTextSize(R.id.widget_prov, sp, 12 * k);
+        v.setTextViewTextSize(R.id.widget_resumen, sp, 12 * k);
+        v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
+        v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
+        v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
+        v.setTextViewTextSize(R.id.widget_up, sp, 16 * k);
+        v.setTextViewTextSize(R.id.widget_down, sp, 16 * k);
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            final int dp = android.util.TypedValue.COMPLEX_UNIT_DIP;
+            v.setViewLayoutWidth(R.id.widget_prev, 38 * k, dp);
+            v.setViewLayoutHeight(R.id.widget_prev, 38 * k, dp);
+            v.setViewLayoutWidth(R.id.widget_next, 38 * k, dp);
+            v.setViewLayoutHeight(R.id.widget_next, 38 * k, dp);
+            v.setViewLayoutHeight(R.id.widget_up, 30 * k, dp);
+            v.setViewLayoutHeight(R.id.widget_down, 30 * k, dp);
+        }
 
         // ----- colores del día: los mismos que en la app (tono por semana) -----
         boolean noche = (ctx.getResources().getConfiguration().uiMode

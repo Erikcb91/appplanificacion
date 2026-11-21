@@ -286,6 +286,16 @@ final class WidgetModel {
         return filas;
     }
 
+    /**
+     * Factor de tamaño para que quepan cabecera + barra + 2 oficinas en la altura (dp) del widget.
+     * k = 1 corresponde a unos 226 dp de alto.
+     */
+    static float escala(float alturaDp) {
+        if (alturaDp <= 0) return 1f;
+        float k = (alturaDp - 39f) / 187f;
+        return Math.max(0.65f, Math.min(1.6f, k));
+    }
+
     private static final int[] HUES = {215, 160, 275, 335, 190};
 
     /** Mismo tono que la app: depende del número de semana (desde el lunes). */

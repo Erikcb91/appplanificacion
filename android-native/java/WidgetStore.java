@@ -30,6 +30,14 @@ final class WidgetStore {
         prefs(ctx).edit().putString(KEY, json).apply();
     }
 
+    static float escala(Context ctx) {
+        return prefs(ctx).getFloat("escala", 1f);
+    }
+
+    static void guardarEscala(Context ctx, float k) {
+        prefs(ctx).edit().putFloat("escala", k).apply();
+    }
+
     static String diaSel(Context ctx) {
         return prefs(ctx).getString(KEY_DIA, "");
     }
