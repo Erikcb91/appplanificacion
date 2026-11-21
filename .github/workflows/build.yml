@@ -37,11 +37,9 @@ jobs:
       - name: Instalar widget nativo de Android
         run: |
           APP=android/app/src/main
-          mkdir -p $APP/java/com/erik/rutas $APP/res/layout $APP/res/xml $APP/res/drawable
-          cp android-native/MainActivity.java android-native/RutasWidgetPlugin.java android-native/RutasWidgetProvider.java $APP/java/com/erik/rutas/
-          cp android-native/widget_rutas.xml $APP/res/layout/
-          cp android-native/rutas_widget_info.xml $APP/res/xml/
-          cp android-native/widget_bg.xml $APP/res/drawable/
+          mkdir -p $APP/java/com/erik/rutas
+          cp android-native/java/*.java $APP/java/com/erik/rutas/
+          cp -r android-native/res/. $APP/res/
           python3 android-native/patch_manifest.py $APP/AndroidManifest.xml
 
       - name: Restaurar firma fija (desde el Secret KEYSTORE_BASE64)
