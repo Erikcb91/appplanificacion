@@ -53,6 +53,18 @@
                 android:textStyle="bold"
                 android:maxLines="1" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/item_nota"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:textColor="@color/w_text"
+            android:textSize="11sp"
+            android:textStyle="italic"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:visibility="gone" />
     </LinearLayout>
 
     <TextView
