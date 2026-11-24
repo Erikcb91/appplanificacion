@@ -211,6 +211,28 @@
         .export-option { display: block; width: 100%; text-align: left; background-color: var(--btn-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-family: inherit; font-size: 0.95em; cursor: pointer; }
         .export-option span { display: block; font-size: 0.82em; color: var(--text-muted); margin-top: 2px; }
 
+        /* Notas, pendiente, mover */
+        .office-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .office-tools { display: flex; gap: 2px; flex-shrink: 0; }
+        .btn-tool { background: transparent; border: none; width: 30px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.4; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+        .btn-tool:active { opacity: 1; }
+        .btn-tool.on { opacity: 1; background-color: rgba(120, 120, 120, 0.18); }
+        .btn-tool.pend.on { background-color: rgba(234, 88, 12, 0.22); }
+        .office-nota { font-size: 0.88em; font-style: italic; color: var(--text-main); background-color: rgba(120, 120, 120, 0.12); border-radius: 8px; padding: 6px 10px; white-space: pre-wrap; word-break: break-word; }
+        .office-item.pendiente { background-color: #ffe6dc; }
+        [data-theme="dark"] .office-item.pendiente { background-color: #4a2a21; }
+        .tag-pend { font-size: 0.78em; font-weight: 700; color: #c2410c; }
+        [data-theme="dark"] .tag-pend { color: #fdba74; }
+        .tag-movida { font-size: 0.78em; font-weight: 700; color: var(--text-muted); }
+        .modal-small { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-small textarea { width: 100%; box-sizing: border-box; min-height: 90px; padding: 10px; font-size: 15px; font-family: inherit; border: 1px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); resize: vertical; }
+        .modal-small input[type=date] { width: 100%; box-sizing: border-box; padding: 10px; font-size: 15px; font-family: inherit; border: 1px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); }
+        .modal-small .fila-botones { display: flex; gap: 8px; margin-top: 10px; }
+        .modal-small .fila-botones button { flex: 1; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-family: inherit; font-size: 14px; cursor: pointer; background-color: var(--btn-bg); color: var(--text-main); }
+        .modal-small .fila-botones button.primario { background-color: var(--primary); color: #fff; }
+        .modal-small .mov-nombre { font-weight: 700; margin-bottom: 4px; }
+        .modal-small .mov-sub { font-size: 0.82em; color: var(--text-muted); margin: 12px 0 6px; font-weight: 600; }
+
         /* Ajustes de tamaño */
         .size-block { padding: 10px 0; border-top: 1px solid var(--border-color); }
         .size-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
@@ -305,7 +327,44 @@
                 </label>
             </div>
 
+            <div id="appVersion" style="text-align:center;font-size:12px;color:var(--text-muted);margin:10px 0 4px;"></div>
             <button id="btnCloseMenu" class="btn-close">Cerrar Menú</button>
+        </div>
+    </div>
+
+    <div id="modalNota" class="modal-small">
+        <div class="modal-content">
+            <h2 id="notaTitulo">Nota</h2>
+            <div class="mov-nombre" id="notaOficina"></div>
+            <textarea id="notaTexto" placeholder="Ej.: falta una llave, volver el jueves, pedir permiso…"></textarea>
+            <div class="fila-botones">
+                <button id="btnNotaCancelar">Cancelar</button>
+                <button id="btnNotaBorrar">Quitar nota</button>
+                <button id="btnNotaGuardar" class="primario">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalMover" class="modal-small">
+        <div class="modal-content">
+            <h2>Orden y día</h2>
+            <div class="mov-nombre" id="moverOficina"></div>
+            <div class="mov-sub">Orden dentro del día</div>
+            <div class="fila-botones" style="margin-top:0;">
+                <button id="btnSubir">▲ Subir</button>
+                <button id="btnBajar">▼ Bajar</button>
+            </div>
+            <div class="mov-sub">Pasar a otro día</div>
+            <input type="date" id="moverFecha">
+            <div class="fila-botones">
+                <button id="btnMoverDia" class="primario">Mover a ese día</button>
+            </div>
+            <div class="fila-botones" id="filaOriginal" style="display:none;">
+                <button id="btnDiaOriginal">↩ Volver al día original</button>
+            </div>
+            <div class="fila-botones">
+                <button id="btnMoverCerrar">Cerrar</button>
+            </div>
         </div>
     </div>
 
@@ -359,6 +418,10 @@
         let ocultos = [];         // ids ocultos (✕)
         let visitadas = {};       // id -> hora "HH:MM"
         let mananas = {};         // id -> 1 (hay que hacerla por la mañana)
+        let notas = {};           // id -> texto de la nota
+        let pendientes = {};      // id -> 1 (dejada pendiente)
+        let movidas = {};         // id -> AAAA-MM-DD (día al que se ha cambiado)
+        let orden = {};           // id -> posición manual dentro de su día
         let vista = 'dia';        // 'dia' | 'semana' | 'todo'
         let diaSel = '';          // día mostrado en la vista Día (AAAA-MM-DD)
         let semanaSel = '';       // lunes de la semana mostrada en la vista Semana (AAAA-MM-DD)
@@ -395,9 +458,24 @@
             if (m) return new Date(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
             return null;
         }
-        function fechaIso(o) {
+        function fechaOriginal(o) {
             const d = parseFecha(o.fecha);
             return d ? isoLocal(d) : null;
+        }
+        function fechaIso(o) {
+            return movidas[o.id] || fechaOriginal(o);
+        }
+        // Orden de las oficinas: por día, las de la mañana arriba y luego el orden manual (o el del Excel)
+        function claveOrden(o) {
+            const v = orden[o.id];
+            return v !== undefined ? v : 1e6 + datosGlobales.indexOf(o);
+        }
+        function cmpOficinas(a, b) {
+            const fa = fechaIso(a) || '9999', fb = fechaIso(b) || '9999';
+            if (fa !== fb) return fa < fb ? -1 : 1;
+            const ma = mananas[a.id] ? 0 : 1, mb = mananas[b.id] ? 0 : 1;
+            if (ma !== mb) return ma - mb;
+            return claveOrden(a) - claveOrden(b);
         }
         const fmtCorta = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
         function nombreDiaCorto(d) {
@@ -537,16 +615,29 @@
                           tipoTxt ? `<b class="tipo-txt">${esc(tipoTxt)}</b>` : '',
                           apsTxt ? `<b class="ap-count">${apsTxt}</b>` : ''].filter(Boolean).join(' · ');
             const poblacion = meta ? `<span class="town-name">${meta}</span>` : '';
+            const esPend = !!pendientes[o.id] && !hora;
+            const nota = notas[o.id] || '';
+            const orig = fechaOriginal(o);
             const marcas = (esManana ? `<span class="tag-manana">☀ Por la mañana</span> ` : '') +
+                           (esPend ? `<span class="tag-pend">⏳ Pendiente</span> ` : '') +
+                           (movidas[o.id] && orig ? `<span class="tag-movida">↪ Movida (era el ${esc(fmtCorta(parseFecha(orig)))})</span> ` : '') +
                            (hora ? `<span class="visit-time">✓ Visitada a las ${esc(hora)}</span>` : '');
+            const herramientas = interactivo ? `
+                <span class="office-tools" data-html2canvas-ignore="true">
+                    <button class="btn-tool${nota ? ' on' : ''}" data-nota="${o.id}" aria-label="Nota" title="Nota">📝</button>
+                    ${FUNC.pendiente ? `<button class="btn-tool pend${esPend ? ' on' : ''}" data-pendiente="${o.id}" aria-label="Dejar pendiente" title="Dejar pendiente">⏳</button>` : ''}
+                    ${FUNC.mover ? `<button class="btn-tool" data-mover="${o.id}" aria-label="Orden y día" title="Orden y día">↕</button>` : ''}
+                </span>` : '';
+            const filaMeta = (poblacion || herramientas) ? `<div class="office-meta">${poblacion || '<span></span>'}${herramientas}</div>` : '';
             return `
-                <div class="office-item${hora ? ' visited' : ''}${esManana ? ' manana' : ''}" id="${o.id}">
+                <div class="office-item${hora ? ' visited' : ''}${esManana ? ' manana' : ''}${esPend ? ' pendiente' : ''}" id="${o.id}">
                     <div class="office-info">
                         <h4 class="office-name">${esc(o.nombre)}</h4>
                         <div class="office-side">${botones}</div>
                     </div>
                     ${direccion}
-                    ${poblacion}
+                    ${filaMeta}
+                    ${nota ? `<div class="office-nota">📝 ${esc(nota)}</div>` : ''}
                     ${marcas ? `<div>${marcas}</div>` : ''}
                 </div>`;
         }
@@ -559,7 +650,8 @@
         function htmlDia(titulo, oficinas, interactivo, iso, alt) {
             if (!oficinas.length) return '';
             const hechas = oficinas.filter(o => visitadas[o.id]).length;
-            const pend = oficinas.find(o => !visitadas[o.id]);
+            const ordenadas = oficinas.slice().sort(cmpOficinas);
+            const pend = ordenadas.find(o => !visitadas[o.id]);
             const provs = mostrarProv ? [...new Set(oficinas.map(o => o.provincia).filter(Boolean))] : [];
             const provsHtml = provs.length ? `<span class="day-prov">📍 ${provs.map(esc).join(' · ')}</span>` : '';
             let acciones = `<span class="chip${hechas === oficinas.length ? ' ok' : ''}">${hechas}/${oficinas.length}</span>`;
@@ -580,7 +672,7 @@
                         <div class="day-left">${badge}<div class="day-titles"><span class="day-title">${esc(tit)}</span>${provsHtml}</div></div>
                         <div class="day-actions">${acciones}</div>
                     </div>
-                    ${porMananaPrimero(oficinas).map(o => htmlOficina(o, interactivo)).join('')}
+                    ${ordenadas.map(o => htmlOficina(o, interactivo)).join('')}
                 </div>`;
         }
 
@@ -607,7 +699,7 @@
             if (!total) return '';
             const hechas = lista.filter(o => visitadas[o.id]).length;
             const pct = Math.round(hechas / total * 100);
-            const ordenada = lista.slice().sort((a, b) => (fechaIso(a) || '9999').localeCompare(fechaIso(b) || '9999'));
+            const ordenada = lista.slice().sort(cmpOficinas);
             const sig = ordenada.find(o => !visitadas[o.id]);
             const titulo = modo === 'busqueda' ? `${total} resultado${total > 1 ? 's' : ''}`
                          : modo === 'dia' ? 'Resumen del día'
@@ -618,6 +710,8 @@
             let extra = '';
             if (modo === 'dia' && horas.length) extra += `<span>Primera ${esc(horas[0])} · Última ${esc(horas[horas.length - 1])}</span>`;
             if (pendManana) extra += `<span>☀ ${pendManana} por la mañana</span>`;
+            const nPend = lista.filter(o => pendientes[o.id] && !visitadas[o.id]).length;
+            if (nPend) extra += `<span>⏳ ${nPend} pendiente${nPend > 1 ? 's' : ''}</span>`;
 
             let siguiente;
             if (!sig) {
@@ -661,7 +755,7 @@
             const buscando = query.trim() !== '';
             if (buscando) {
                 const q = norm(query.trim());
-                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.aps ? o.aps + ' ap' : '', o.fecha].join(' ')).includes(q));
+                lista = lista.filter(o => norm([o.nombre, o.direccion, o.poblacion, o.provincia, o.tipo, o.aps ? o.aps + ' ap' : '', notas[o.id] || '', o.fecha].join(' ')).includes(q));
             }
             const modoDia = !buscando && vista === 'dia';
             const modoSemana = !buscando && vista === 'semana';
@@ -720,6 +814,10 @@
             guardarJSON('oficinas_ocultas', ocultos);
             guardarJSON('oficinas_visitadas', visitadas);
             guardarJSON('oficinas_manana', mananas);
+            guardarJSON('oficinas_notas', notas);
+            guardarJSON('oficinas_pendientes', pendientes);
+            guardarJSON('oficinas_movidas', movidas);
+            guardarJSON('oficinas_orden', orden);
             renderizar();
             actualizarWidget();
             if ($('modalMenu').style.display === 'flex') actualizarListaDiasOcultos();
@@ -728,8 +826,87 @@
         // --- ACCIONES SOBRE OFICINAS ---
         function alternarVisitada(id) {
             if (visitadas[id]) delete visitadas[id];
-            else visitadas[id] = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            else { visitadas[id] = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); delete pendientes[id]; }
             cambio();
+        }
+
+        // --- NOTAS / PENDIENTE / MOVER ---
+        const FUNC = { pendiente: true, mover: true };   // funciones activas en la interfaz
+        let notaEdit = null;   // { id, marcarPendiente }
+        const oficinaPorId = (id) => datosGlobales.find(o => o.id === id);
+
+        function abrirNota(id, marcarPendiente) {
+            const o = oficinaPorId(id); if (!o) return;
+            notaEdit = { id, marcarPendiente: !!marcarPendiente };
+            $('notaTitulo').textContent = marcarPendiente ? '⏳ Dejar pendiente' : '📝 Nota';
+            $('notaOficina').textContent = o.nombre;
+            $('notaTexto').value = notas[id] || '';
+            $('btnNotaBorrar').style.display = notas[id] ? 'block' : 'none';
+            $('modalNota').style.display = 'flex';
+            setTimeout(() => $('notaTexto').focus(), 50);
+        }
+        function cerrarNota() { $('modalNota').style.display = 'none'; notaEdit = null; }
+        function guardarNota() {
+            if (!notaEdit) return;
+            const t = $('notaTexto').value.trim();
+            if (t) notas[notaEdit.id] = t; else delete notas[notaEdit.id];
+            if (notaEdit.marcarPendiente) pendientes[notaEdit.id] = 1;
+            cerrarNota();
+            cambio();
+        }
+        function borrarNota() {
+            if (!notaEdit) return;
+            delete notas[notaEdit.id];
+            const marcar = notaEdit.marcarPendiente, id = notaEdit.id;
+            cerrarNota();
+            if (marcar) pendientes[id] = 1;
+            cambio();
+        }
+        function alternarPendiente(id) {
+            if (pendientes[id]) { delete pendientes[id]; cambio(); }
+            else abrirNota(id, true);   // al dejarla pendiente se pide una nota (opcional)
+        }
+
+        let moverId = null;
+        function abrirMover(id) {
+            moverId = id;
+            pintarMover();
+            $('modalMover').style.display = 'flex';
+        }
+        function pintarMover() {
+            const o = oficinaPorId(moverId); if (!o) return;
+            const iso = fechaIso(o);
+            $('moverOficina').textContent = o.nombre + (iso ? ' · ' + nombreDiaCorto(parseFecha(iso)) : '');
+            if (!$('moverFecha').value) {
+                const d = iso ? parseFecha(iso) : new Date();
+                $('moverFecha').value = isoLocal(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1));
+            }
+            $('filaOriginal').style.display = movidas[moverId] ? 'flex' : 'none';
+        }
+        function cerrarMover() { $('modalMover').style.display = 'none'; moverId = null; $('moverFecha').value = ''; }
+        function moverOrden(dir) {
+            const o = oficinaPorId(moverId); if (!o) return;
+            const dia = fechaIso(o);
+            const lista = datosGlobales.filter(x => !ocultos.includes(x.id) && fechaIso(x) === dia).sort(cmpOficinas);
+            const i = lista.findIndex(x => x.id === moverId), j = i + dir;
+            if (j < 0 || j >= lista.length) { avisar(dir < 0 ? 'Ya es la primera del día' : 'Ya es la última del día'); return; }
+            if (!!mananas[lista[j].id] !== !!mananas[moverId]) {
+                avisar('Las de la mañana (☀) siempre van arriba. Marca o desmarca ☀ para cambiarla de grupo.');
+                return;
+            }
+            lista.forEach((x, k) => { orden[x.id] = k; });
+            const t = orden[lista[i].id]; orden[lista[i].id] = orden[lista[j].id]; orden[lista[j].id] = t;
+            cambio();
+        }
+        function cambiarDiaOficina(iso) {
+            const o = oficinaPorId(moverId); if (!o) return;
+            if (!iso || !parseFecha(iso)) { avisar('Elige un día'); return; }
+            if (iso === fechaOriginal(o)) delete movidas[o.id]; else movidas[o.id] = iso;
+            delete orden[o.id];   // al día nuevo entra la última
+            const d = parseFecha(iso);
+            cerrarMover();
+            cambio();
+            avisar('Movida al ' + nombreDiaCorto(d).toLowerCase());
         }
         function alternarManana(id) {
             if (mananas[id]) delete mananas[id]; else mananas[id] = 1;
@@ -809,6 +986,22 @@
                 input.value = '';   // permite volver a importar el mismo archivo
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        const APP_VERSION = 'v15';
+        // Aviso temporal abajo de la pantalla
+        function avisar(texto) {
+            let t = $('toastAviso');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toastAviso';
+                t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:18px;z-index:2000;background:#1f2937;color:#fff;padding:12px 14px;border-radius:12px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.35);';
+                document.body.appendChild(t);
+            }
+            t.textContent = texto;
+            t.style.display = 'block';
+            clearTimeout(t._h);
+            t._h = setTimeout(() => { t.style.display = 'none'; }, 9000);
         }
 
         function procesarDatosExcel(rows, nombreArchivo, nombreHoja) {
@@ -892,12 +1085,17 @@
             ocultos = ocultos.filter(id => ids.has(id));
             Object.keys(visitadas).forEach(id => { if (!ids.has(id)) delete visitadas[id]; });
             Object.keys(mananas).forEach(id => { if (!ids.has(id)) delete mananas[id]; });
+            [notas, pendientes, movidas, orden].forEach(m => Object.keys(m).forEach(id => { if (!ids.has(id)) delete m[id]; }));
             diaSel = diaPorDefecto();
             semanaSel = semanaPorDefecto();
             query = '';
             $('buscador').value = '';
             cerrarMenu();
             cambio();
+            const conAps = oficinas.filter(o => o.aps).length;
+            avisar(oficinas.length + ' oficinas importadas · ' + (idxAps !== -1
+                ? conAps + ' con nº de APs (columna «' + headers[idxAps] + '»)'
+                : '⚠ no encuentro la columna de APs. Columnas del Excel: ' + headers.filter(Boolean).join(', ')));
         }
 
         // --- EXPORTAR COMO IMAGEN (día / semana / todo) ---
@@ -1058,9 +1256,10 @@
             if (!W) return;
             const datos = datosGlobales
                 .filter(o => !ocultos.includes(o.id))
+                .slice().sort(cmpOficinas)
                 .map(o => {
                     const f = fechaIso(o);
-                    return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', t: tipoBonito(o.tipo), a: o.aps || 0, v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0 } : null;
+                    return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', t: tipoBonito(o.tipo), a: o.aps || 0, v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0, nt: notas[o.id] || '', pe: (pendientes[o.id] && !visitadas[o.id]) ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
             try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos), texto: multTam('Widget'), check: multTam('Check') })).catch(() => {}); } catch (e) {}
@@ -1080,7 +1279,7 @@
                     const nuevo = typeof it.v === 'string' ? it.v : '';
                     const actual = visitadas[it.i] || '';
                     if (nuevo !== actual) {
-                        if (nuevo) visitadas[it.i] = nuevo; else delete visitadas[it.i];
+                        if (nuevo) { visitadas[it.i] = nuevo; delete pendientes[it.i]; } else delete visitadas[it.i];
                         cambios = true;
                     }
                 });
@@ -1095,6 +1294,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             $('btnMenu').addEventListener('click', abrirMenu);
             $('btnCloseMenu').addEventListener('click', cerrarMenu);
+            $('appVersion').textContent = 'Mis Rutas · versión ' + APP_VERSION;
             $('btnDownload').addEventListener('click', () => abrirExportar('descargar'));
             $('btnShare').addEventListener('click', () => abrirExportar('compartir'));
             $('btnCerrarExport').addEventListener('click', () => { $('modalExport').style.display = 'none'; });
@@ -1157,8 +1357,19 @@
                 let b;
                 if ((b = e.target.closest('[data-visitar]'))) alternarVisitada(b.dataset.visitar);
                 else if ((b = e.target.closest('[data-manana]'))) alternarManana(b.dataset.manana);
+                else if ((b = e.target.closest('[data-nota]'))) abrirNota(b.dataset.nota, false);
+                else if ((b = e.target.closest('[data-pendiente]'))) alternarPendiente(b.dataset.pendiente);
+                else if ((b = e.target.closest('[data-mover]'))) abrirMover(b.dataset.mover);
                 else if ((b = e.target.closest('[data-ocultar]'))) ocultarOficina(b.dataset.ocultar);
             });
+            $('btnNotaCancelar').addEventListener('click', cerrarNota);
+            $('btnNotaGuardar').addEventListener('click', guardarNota);
+            $('btnNotaBorrar').addEventListener('click', borrarNota);
+            $('btnSubir').addEventListener('click', () => moverOrden(-1));
+            $('btnBajar').addEventListener('click', () => moverOrden(1));
+            $('btnMoverDia').addEventListener('click', () => cambiarDiaOficina($('moverFecha').value));
+            $('btnDiaOriginal').addEventListener('click', () => { const o = oficinaPorId(moverId); if (o) cambiarDiaOficina(fechaOriginal(o)); });
+            $('btnMoverCerrar').addEventListener('click', cerrarMover);
             $('hiddenDaysList').addEventListener('click', (e) => {
                 const b = e.target.closest('[data-restaurar]');
                 if (b) restaurarDia(b.dataset.restaurar);
@@ -1185,6 +1396,10 @@
             ocultos = leerJSON('oficinas_ocultas', []);
             visitadas = leerJSON('oficinas_visitadas', {});
             mananas = leerJSON('oficinas_manana', {});
+            notas = leerJSON('oficinas_notas', {});
+            pendientes = leerJSON('oficinas_pendientes', {});
+            movidas = leerJSON('oficinas_movidas', {});
+            orden = leerJSON('oficinas_orden', {});
             diaSel = diaPorDefecto();
             semanaSel = semanaPorDefecto();
 

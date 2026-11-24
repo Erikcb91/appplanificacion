@@ -93,9 +93,18 @@ public class RutasWidgetService extends RemoteViewsService {
                 r.setViewLayoutWidth(R.id.item_check, 28 * k * c, android.util.TypedValue.COMPLEX_UNIT_DIP);
                 r.setViewLayoutHeight(R.id.item_check, 28 * k * c, android.util.TypedValue.COMPLEX_UNIT_DIP);
             }
-            r.setTextViewText(R.id.item_nombre, (it.m ? "☀ " : "") + it.n);
+            r.setTextViewText(R.id.item_nombre, (it.pe ? "⏳ " : "") + (it.m ? "☀ " : "") + it.n);
             String detalle = it.d.isEmpty() ? it.p : (it.p.isEmpty() ? it.d : it.d + ", " + it.p);
             r.setTextViewText(R.id.item_detalle, detalle);
+
+            // Nota (solo ocupa una línea más en las oficinas que tienen nota)
+            if (it.nt.isEmpty()) {
+                r.setViewVisibility(R.id.item_nota, android.view.View.GONE);
+            } else {
+                r.setTextViewText(R.id.item_nota, "📝 " + it.nt);
+                r.setViewVisibility(R.id.item_nota, android.view.View.VISIBLE);
+                r.setTextViewTextSize(R.id.item_nota, android.util.TypedValue.COMPLEX_UNIT_SP, 10.5f * k * t);
+            }
 
             // Tipo y nº de APs, a la derecha de la línea de la dirección: «Renove · 7 APs»
             String etiqueta = it.t;
@@ -112,7 +121,8 @@ public class RutasWidgetService extends RemoteViewsService {
                     & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
                     == android.content.res.Configuration.UI_MODE_NIGHT_YES;
             int hue = WidgetModel.hueSemana(it.f);
-            int fondo = it.m ? ContextCompat.getColor(ctx, R.color.w_manana)
+            int fondo = it.pe ? ContextCompat.getColor(ctx, R.color.w_pend)
+                    : it.m ? ContextCompat.getColor(ctx, R.color.w_manana)
                     : (noche ? WidgetModel.hsl(hue, 22, 25) : 0xFFFFFFFF);
             r.setInt(R.id.item_root, "setBackgroundColor", fondo);
 

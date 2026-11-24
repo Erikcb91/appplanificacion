@@ -3,6 +3,7 @@
     <color name="w_bg">#F3F4F6</color>
     <color name="w_row">#FFFFFF</color>
     <color name="w_manana">#FFF9DB</color>
+    <color name="w_pend">#FFE6DC</color>
     <color name="w_text">#1F2937</color>
     <color name="w_muted">#6B7280</color>
     <color name="w_primary">#2563EB</color>
