@@ -1,5 +1,10 @@
 {
   "appId": "com.erik.rutas",
   "appName": "Mis Rutas",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
 }

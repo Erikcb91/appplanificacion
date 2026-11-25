@@ -233,6 +233,14 @@
         .modal-small .mov-nombre { font-weight: 700; margin-bottom: 4px; }
         .modal-small .mov-sub { font-size: 0.82em; color: var(--text-muted); margin: 12px 0 6px; font-weight: 600; }
 
+        /* Sincronización */
+        .sync-sub { font-size: 0.82em; color: var(--text-muted); margin: 8px 0 6px; }
+        .sync-input { width: 100%; box-sizing: border-box; padding: 10px; font-size: 14px; font-family: monospace; border: 1px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); }
+        .sync-codigo { font-family: monospace; font-size: 14px; font-weight: 700; word-break: break-all; padding: 10px; border-radius: 10px; background: var(--btn-bg); user-select: all; }
+        .fila-botones-sync { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-sync { flex: 1; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-family: inherit; font-size: 14px; cursor: pointer; background-color: var(--btn-bg); color: var(--text-main); }
+        .btn-sync.primario { background-color: var(--primary); color: #fff; }
+
         /* Ajustes de tamaño */
         .size-block { padding: 10px 0; border-top: 1px solid var(--border-color); }
         .size-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
@@ -317,6 +325,24 @@
             <div class="size-block">
                 <div class="size-head">✓ Botón del widget <span id="tamCheckTxt">100 %</span></div>
                 <input type="range" class="size-range" id="tamCheck" min="-10" max="10" step="1" value="0">
+            </div>
+
+            <div class="size-block">
+                <div class="size-head">🔄 Sincronizar teléfonos <span id="syncEstado">Desactivada</span></div>
+                <div id="syncInactivo">
+                    <div class="fila-botones-sync"><button class="btn-sync primario" id="btnSyncCrear">Crear grupo con este teléfono</button></div>
+                    <div class="sync-sub">o únete a un grupo con el código de otro teléfono:</div>
+                    <input type="text" id="syncCodigoInput" class="sync-input" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx-xxxx" autocapitalize="off" autocomplete="off" spellcheck="false">
+                    <div class="fila-botones-sync"><button class="btn-sync" id="btnSyncUnir">Unirme al grupo</button></div>
+                </div>
+                <div id="syncActivo" style="display:none;">
+                    <div class="sync-sub">Código del grupo (escríbelo en el otro teléfono):</div>
+                    <div id="syncCodigo" class="sync-codigo"></div>
+                    <div class="fila-botones-sync">
+                        <button class="btn-sync" id="btnSyncCopiar">Copiar código</button>
+                        <button class="btn-sync" id="btnSyncOff">Desactivar</button>
+                    </div>
+                </div>
             </div>
 
             <div class="theme-toggle-container" style="margin-top: 0; padding-top: 15px;">
@@ -820,6 +846,7 @@
             guardarJSON('oficinas_orden', orden);
             renderizar();
             actualizarWidget();
+            programarSync();
             if ($('modalMenu').style.display === 'flex') actualizarListaDiasOcultos();
         }
 
@@ -988,7 +1015,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        const APP_VERSION = 'v15';
+        const APP_VERSION = 'v16';
         // Aviso temporal abajo de la pantalla
         function avisar(texto) {
             let t = $('toastAviso');
@@ -1090,6 +1117,7 @@
             semanaSel = semanaPorDefecto();
             query = '';
             $('buscador').value = '';
+            if (sync.codigo) { sync.planSucio = true; guardarSync(); }
             cerrarMenu();
             cambio();
             const conAps = oficinas.filter(o => o.aps).length;
@@ -1288,6 +1316,228 @@
         }
         async function alVolver() {
             if (await sincronizarDesdeWidget()) cambio();
+            sincronizar();
+        }
+
+        // ===================== SINCRONIZACIÓN ENTRE TELÉFONOS (Firestore, API REST) =====================
+        const FB = { apiKey: 'AIzaSyCyJIMQ74onthusnnErUhiREN67ZhpH3Kk', projectId: 'appplanificacion-a6087' };
+        const SYNC_CAMPOS = ['v', 'm', 'pe', 'nt', 'mv', 'or'];
+        const SYNC_VACIO = { v: '', m: 0, pe: 0, nt: '', mv: '', or: -1 };
+        const sync = { codigo: '', espejo: {}, planTs: 0, planSucio: false, ultimoPull: 0,
+                       ocupado: false, repetir: false, aplicando: false, estado: '', ultima: '' };
+
+        function guardarSync() {
+            guardarJSON('sync_config', { codigo: sync.codigo, espejo: sync.espejo, planTs: sync.planTs,
+                                         planSucio: sync.planSucio, ultimoPull: sync.ultimoPull });
+        }
+        function cargarSync() {
+            const c = leerJSON('sync_config', null);
+            if (c && c.codigo) {
+                sync.codigo = c.codigo; sync.espejo = c.espejo || {}; sync.planTs = c.planTs || 0;
+                sync.planSucio = !!c.planSucio; sync.ultimoPull = c.ultimoPull || 0;
+            }
+        }
+
+        // Estado de una oficina en este teléfono, en el mismo formato que en la nube
+        function estadoLocal(id) {
+            return { v: visitadas[id] || '', m: mananas[id] ? 1 : 0, pe: pendientes[id] ? 1 : 0, nt: notas[id] || '',
+                     mv: movidas[id] || '', or: orden[id] !== undefined ? orden[id] : -1 };
+        }
+        function aplicarCampo(id, k, val) {
+            const quitar = (m) => { delete m[id]; };
+            if (k === 'v') { val ? visitadas[id] = val : quitar(visitadas); }
+            else if (k === 'm') { val ? mananas[id] = 1 : quitar(mananas); }
+            else if (k === 'pe') { val ? pendientes[id] = 1 : quitar(pendientes); }
+            else if (k === 'nt') { val ? notas[id] = val : quitar(notas); }
+            else if (k === 'mv') { val ? movidas[id] = val : quitar(movidas); }
+            else if (k === 'or') { val >= 0 ? orden[id] = val : quitar(orden); }
+        }
+
+        // --- Firestore REST ---
+        const FS_BASE = () => `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents`;
+        const FS_NAME = (ruta) => `projects/${FB.projectId}/databases/(default)/documents/${ruta}`;
+        async function fsFetch(url, opciones) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 20000);
+            try {
+                const r = await fetch(url + (url.includes('?') ? '&' : '?') + 'key=' + FB.apiKey,
+                    Object.assign({ signal: ctrl.signal, headers: { 'Content-Type': 'application/json' } }, opciones || {}));
+                if (r.status === 404) return null;
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return await r.json();
+            } finally { clearTimeout(t); }
+        }
+        const fsVal = (x) => typeof x === 'number' ? { integerValue: String(Math.round(x)) } : { stringValue: String(x == null ? '' : x) };
+        function fsLeer(f) {
+            if (!f) return undefined;
+            if (f.stringValue !== undefined) return f.stringValue;
+            if (f.integerValue !== undefined) return parseInt(f.integerValue, 10);
+            if (f.doubleValue !== undefined) return f.doubleValue;
+            return undefined;
+        }
+        const fsCampos = (obj) => { const f = {}; Object.keys(obj).forEach(k => { f[k] = fsVal(obj[k]); }); return f; };
+        const fsLeerCampos = (f) => { const o = {}; Object.keys(f || {}).forEach(k => { o[k] = fsLeer(f[k]); }); return o; };
+        async function fsEscribir(writes) {
+            for (let i = 0; i < writes.length; i += 400) {
+                await fsFetch(`${FS_BASE()}:commit`, { method: 'POST', body: JSON.stringify({ writes: writes.slice(i, i + 400) }) });
+            }
+        }
+        async function fsListar(col) {
+            const docs = []; let token = '';
+            do {
+                const j = await fsFetch(`${FS_BASE()}/grupos/${sync.codigo}/${col}?pageSize=300` + (token ? '&pageToken=' + encodeURIComponent(token) : ''));
+                if (j && j.documents) j.documents.forEach(d => docs.push({ id: d.name.split('/').pop(), f: fsLeerCampos(d.fields) }));
+                token = (j && j.nextPageToken) || '';
+            } while (token);
+            return docs;
+        }
+        // Solo los estados cambiados desde `desde` (ms); así se leen pocos documentos en cada consulta
+        async function fsCambiados(desde) {
+            const j = await fsFetch(`${FS_BASE()}/grupos/${sync.codigo}:runQuery`, { method: 'POST', body: JSON.stringify({
+                structuredQuery: { from: [{ collectionId: 'estado' }],
+                    where: { fieldFilter: { field: { fieldPath: 'ts' }, op: 'GREATER_THAN', value: { integerValue: String(Math.max(0, Math.round(desde))) } } } } }) });
+            return (j || []).filter(x => x.document).map(x => ({ id: x.document.name.split('/').pop(), f: fsLeerCampos(x.document.fields) }));
+        }
+
+        // --- Plan (las oficinas importadas) ---
+        async function subirPlan() {
+            const c = sync.codigo, ts = Date.now();
+            const remotas = await fsListar('oficinas');
+            const ids = new Set(datosGlobales.map(o => o.id));
+            const writes = [];
+            datosGlobales.forEach((o, ix) => writes.push({ update: { name: FS_NAME(`grupos/${c}/oficinas/${o.id}`), fields: fsCampos({
+                ix: ix, fecha: String(o.fecha), nombre: o.nombre, direccion: o.direccion || '', poblacion: o.poblacion || '',
+                provincia: o.provincia || '', tipo: o.tipo || '', aps: o.aps || 0 }) } }));
+            remotas.forEach(r => { if (!ids.has(r.id)) {
+                writes.push({ delete: FS_NAME(`grupos/${c}/oficinas/${r.id}`) });
+                writes.push({ delete: FS_NAME(`grupos/${c}/estado/${r.id}`) });
+            } });
+            writes.push({ update: { name: FS_NAME(`grupos/${c}/meta/plan`), fields: fsCampos({ ts: ts, n: datosGlobales.length }) } });
+            await fsEscribir(writes);
+            sync.planTs = ts; sync.planSucio = false;
+        }
+        async function traerPlan(ts) {
+            const docs = await fsListar('oficinas');
+            docs.sort((a, b) => (a.f.ix || 0) - (b.f.ix || 0));
+            datosGlobales = docs.map(d => ({ id: d.id, fecha: d.f.fecha || '', nombre: d.f.nombre || '', direccion: d.f.direccion || '',
+                poblacion: d.f.poblacion || '', provincia: d.f.provincia || '', tipo: d.f.tipo || '', aps: d.f.aps > 0 ? d.f.aps : '' }));
+            guardarJSON('rutas_guardadas', datosGlobales);
+            const ids = new Set(datosGlobales.map(o => o.id));
+            ocultos = ocultos.filter(id => ids.has(id));
+            [visitadas, mananas, notas, pendientes, movidas, orden, sync.espejo].forEach(m => Object.keys(m).forEach(id => { if (!ids.has(id)) delete m[id]; }));
+            sync.planTs = ts;
+            sync.ultimoPull = 0;   // el plan es nuevo: se vuelven a leer todos los estados
+            diaSel = diaPorDefecto(); semanaSel = semanaPorDefecto();
+        }
+
+        // --- Ciclo de sincronización ---
+        async function sincronizar() {
+            if (!sync.codigo) return;
+            if (sync.ocupado) { sync.repetir = true; return; }
+            sync.ocupado = true;
+            let huboCambiosLocales = false;
+            try {
+                // 1) Plan: si he importado un Excel lo subo; si otro teléfono lo ha cambiado, lo adopto
+                const meta = await fsFetch(`${FS_BASE()}/grupos/${sync.codigo}/meta/plan`);
+                const remotoTs = meta ? (fsLeer(meta.fields.ts) || 0) : 0;
+                if (sync.planSucio && datosGlobales.length) { await subirPlan(); }
+                else if (remotoTs > sync.planTs) { await traerPlan(remotoTs); huboCambiosLocales = true; }
+
+                // 2) Estados cambiados en la nube desde la última lectura (con 2 min de margen por si los relojes difieren)
+                const cambiados = await fsCambiados(sync.ultimoPull ? sync.ultimoPull - 120000 : 0);
+                const remoto = {}; let maxTs = sync.ultimoPull;
+                cambiados.forEach(d => { remoto[d.id] = d.f; if (d.f.ts > maxTs) maxTs = d.f.ts; });
+
+                // 3) Mezcla campo a campo: lo cambiado aquí se sube; lo cambiado allí se aplica
+                const writes = [], nuevoEspejo = {};
+                const ahora = Date.now();
+                datosGlobales.forEach(o => {
+                    const id = o.id, loc = estadoLocal(id), esp = Object.assign({}, SYNC_VACIO, sync.espejo[id] || {});
+                    const rem = remoto[id], subir = {};
+                    SYNC_CAMPOS.forEach(k => {
+                        if (loc[k] !== esp[k]) { subir[k] = loc[k]; esp[k] = loc[k]; }
+                        else if (rem && rem[k] !== undefined && rem[k] !== esp[k]) { aplicarCampo(id, k, rem[k]); esp[k] = rem[k]; huboCambiosLocales = true; }
+                    });
+                    nuevoEspejo[id] = esp;
+                    const ks = Object.keys(subir);
+                    if (ks.length) {
+                        subir.ts = ahora;
+                        writes.push({ update: { name: FS_NAME(`grupos/${sync.codigo}/estado/${id}`), fields: fsCampos(subir) },
+                                      updateMask: { fieldPaths: Object.keys(subir) } });
+                    }
+                });
+                if (writes.length) await fsEscribir(writes);   // si falla, el espejo no avanza y se reintenta
+                sync.espejo = nuevoEspejo;
+                sync.ultimoPull = maxTs;
+                sync.estado = 'ok'; sync.ultima = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                sync.estado = 'error';
+            } finally {
+                sync.ocupado = false;
+                guardarSync();
+                pintarSync();
+            }
+            if (huboCambiosLocales) {
+                sync.aplicando = true;
+                try { cambio(); } finally { sync.aplicando = false; }
+            }
+            if (sync.repetir) { sync.repetir = false; setTimeout(sincronizar, 300); }
+        }
+        let syncTimer = null;
+        function programarSync() {
+            if (!sync.codigo || sync.aplicando) return;
+            clearTimeout(syncTimer);
+            syncTimer = setTimeout(sincronizar, 1500);
+        }
+
+        // --- Interfaz ---
+        function codigoNuevo() {
+            const alf = 'abcdefghjkmnpqrstuvwxyz23456789';
+            const b = new Uint8Array(24);
+            (window.crypto || window.msCrypto).getRandomValues(b);
+            let s = '';
+            b.forEach((x, i) => { s += alf[x % alf.length]; if (i % 4 === 3 && i < 23) s += '-'; });
+            return s;
+        }
+        function pintarSync() {
+            const e = $('syncEstado'); if (!e) return;
+            const activo = !!sync.codigo;
+            e.textContent = !activo ? 'Desactivada' : sync.estado === 'error' ? 'Sin conexión (se reintenta)' : sync.ultima ? 'Activa · ' + sync.ultima : 'Activa';
+            $('syncCodigo').textContent = activo ? sync.codigo : '';
+            $('syncActivo').style.display = activo ? 'block' : 'none';
+            $('syncInactivo').style.display = activo ? 'none' : 'block';
+        }
+        async function syncCrear() {
+            if (!datosGlobales.length) { alert('Primero importa el Excel en este teléfono y después crea el grupo.'); return; }
+            sync.codigo = codigoNuevo(); sync.espejo = {}; sync.planTs = 0; sync.planSucio = true; sync.ultimoPull = 0; sync.estado = ''; sync.ultima = '';
+            guardarSync(); pintarSync();
+            await sincronizar();
+            avisar(sync.estado === 'ok' ? 'Grupo creado. Escribe el código en el otro teléfono (Menú → Sincronización → Unirme).' : 'Grupo creado, pero sin conexión: se subirá en cuanto haya internet.');
+        }
+        async function syncUnir() {
+            const cod = $('syncCodigoInput').value.trim().toLowerCase().replace(/\s+/g, '');
+            if (cod.length < 10) { alert('Escribe el código completo del otro teléfono.'); return; }
+            const antes = sync.codigo; sync.codigo = cod;
+            let meta;
+            try { meta = await fsFetch(`${FS_BASE()}/grupos/${cod}/meta/plan`); }
+            catch (e) { sync.codigo = antes; alert('No hay conexión con el servidor. Inténtalo con internet.'); return; }
+            if (!meta) { sync.codigo = antes; alert('No existe ningún grupo con ese código. Revisa que esté bien escrito.'); return; }
+            if (datosGlobales.length && !confirm('Se reemplazarán las oficinas y marcas de este teléfono por las del grupo. ¿Continuar?')) { sync.codigo = antes; return; }
+            datosGlobales = []; ocultos = []; visitadas = {}; mananas = {}; notas = {}; pendientes = {}; movidas = {}; orden = {};
+            sync.espejo = {}; sync.planTs = 0; sync.planSucio = false; sync.ultimoPull = 0; sync.estado = ''; sync.ultima = '';
+            $('syncCodigoInput').value = '';
+            guardarSync(); cambio(); pintarSync();
+            await sincronizar();
+            avisar(sync.estado === 'ok' ? 'Unido al grupo: ' + datosGlobales.length + ' oficinas.' : 'No se pudo descargar todavía; se reintenta solo.');
+        }
+        function syncDesactivar() {
+            if (!confirm('¿Dejar de sincronizar este teléfono? Los datos de este teléfono se conservan.')) return;
+            sync.codigo = ''; sync.espejo = {}; sync.planSucio = false; sync.ultimoPull = 0; sync.planTs = 0;
+            guardarSync(); pintarSync();
+        }
+        async function syncCopiar() {
+            try { await navigator.clipboard.writeText(sync.codigo); avisar('Código copiado.'); }
+            catch (e) { avisar('Código: ' + sync.codigo); }
         }
 
         // --- ARRANQUE ---
@@ -1362,6 +1612,10 @@
                 else if ((b = e.target.closest('[data-mover]'))) abrirMover(b.dataset.mover);
                 else if ((b = e.target.closest('[data-ocultar]'))) ocultarOficina(b.dataset.ocultar);
             });
+            $('btnSyncCrear').addEventListener('click', syncCrear);
+            $('btnSyncUnir').addEventListener('click', syncUnir);
+            $('btnSyncOff').addEventListener('click', syncDesactivar);
+            $('btnSyncCopiar').addEventListener('click', syncCopiar);
             $('btnNotaCancelar').addEventListener('click', cerrarNota);
             $('btnNotaGuardar').addEventListener('click', guardarNota);
             $('btnNotaBorrar').addEventListener('click', borrarNota);
@@ -1403,8 +1657,11 @@
             diaSel = diaPorDefecto();
             semanaSel = semanaPorDefecto();
 
+            cargarSync();
+            pintarSync();
             renderizar();
             alVolver().then(actualizarWidget);
+            setInterval(() => { if (document.visibilityState === 'visible') sincronizar(); }, 25000);
         });
     </script>
 </body>
