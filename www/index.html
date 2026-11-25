@@ -119,6 +119,23 @@
         #errorBanner { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--danger); color: white; padding: 10px; text-align: center; font-weight: bold; z-index: 99999; }
     
         /* ===== Buscador ===== */
+        .filtro-bar { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; flex-wrap: wrap; }
+        .btn-filtro { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+        .btn-filtro.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .filtro-resumen { font-size: 0.82em; color: var(--text-muted); flex: 1; min-width: 0; }
+        .filtro-quitar { border: none; background: transparent; color: var(--primary); font-weight: 700; font-size: 0.85em; font-family: inherit; cursor: pointer; padding: 6px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+        .chip { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); padding: 7px 12px; border-radius: 999px; font-size: 14px; font-family: inherit; cursor: pointer; }
+        .chip.on { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
+        .filtro-sub { font-weight: 700; font-size: 0.85em; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
+        .banner-sem { display: flex; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.9em; }
+        .banner-sem .bs-txt { flex: 1; min-width: 0; }
+        .banner-sem .bs-t { font-weight: 700; }
+        .banner-sem .bs-sub { color: var(--text-muted); font-size: 0.92em; margin-top: 2px; }
+        .banner-sem button { border: none; background: var(--primary); color: #fff; font-weight: 700; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 10px; cursor: pointer; flex: none; }
+        .imp-sub { font-size: 0.88em; color: var(--text-muted); margin: 8px 0; }
+        .imp-t { font-weight: 700; margin-top: 10px; }
+        .imp-lista { margin: 4px 0 0; padding-left: 20px; font-size: 0.9em; }
         .search-box { position: relative; margin-bottom: 12px; }
         .search-box input { width: 100%; box-sizing: border-box; padding: 12px 40px 12px 14px; font-size: 15px; font-family: inherit; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-bg); color: var(--text-main); outline: none; -webkit-appearance: none; appearance: none; }
         .search-box input:focus { border-color: var(--primary); }
@@ -275,6 +292,12 @@
             <button id="btnLimpiarBusqueda" class="search-clear" aria-label="Borrar búsqueda">✕</button>
         </div>
 
+        <div class="filtro-bar" id="filtroBar" style="display:none;">
+            <button id="btnFiltros" class="btn-filtro">⚙ Filtros</button>
+            <span id="filtroResumen" class="filtro-resumen"></span>
+            <button id="btnFiltroQuitar" class="filtro-quitar" style="display:none;">Quitar filtros</button>
+        </div>
+
         <div class="view-switch" id="viewSwitch" style="display:none;">
             <button data-vista="dia" class="active">📅 Día</button>
             <button data-vista="semana">🗓 Semana</button>
@@ -289,6 +312,7 @@
             <button id="btnHoy" class="btn-hoy">Hoy</button>
         </div>
 
+        <div id="bannerSemana"></div>
         <div id="resumenDia"></div>
 
         <div id="captureArea"></div>
@@ -316,6 +340,14 @@
                     <input type="checkbox" id="provToggle" checked>
                     <span class="slider"></span>
                 </label>
+            </div>
+
+            <div class="size-block">
+                <div class="size-head">🧭 Navegar con <span>solo en este teléfono</span></div>
+                <div class="fila-botones-sync">
+                    <button class="btn-sync" id="navWaze" data-nav="waze">Waze</button>
+                    <button class="btn-sync" id="navMaps" data-nav="maps">Google Maps</button>
+                </div>
             </div>
 
             <div class="size-block">
@@ -371,6 +403,34 @@
                 <button id="btnNotaCancelar">Cancelar</button>
                 <button id="btnNotaBorrar">Quitar nota</button>
                 <button id="btnNotaGuardar" class="primario">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalFiltros" class="modal-small">
+        <div class="modal-content">
+            <div class="modal-head"><h2>Filtros</h2><button id="btnFiltrosCerrar" class="btn-x" aria-label="Cerrar">✕</button></div>
+            <div class="filtro-sub">Estado</div>
+            <div class="chips" id="chipsEstado"></div>
+            <div class="filtro-sub">Tipo de visita</div>
+            <div class="chips" id="chipsTipo"></div>
+            <div class="filtro-sub">Provincia</div>
+            <div class="chips" id="chipsProv"></div>
+            <div class="fila-botones">
+                <button id="btnFiltrosLimpiar">Quitar todos</button>
+                <button id="btnFiltrosOk" class="primario">Ver resultados</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalImport" class="modal-small">
+        <div class="modal-content">
+            <h2>Actualizar planificación</h2>
+            <div id="impDetalle"></div>
+            <div class="fila-botones" style="flex-direction:column;">
+                <button id="btnImpAplicar" class="primario">Aplicar solo estos cambios</button>
+                <button id="btnImpTodo">Reemplazar todo (borra lo anterior)</button>
+                <button id="btnImpCancelar">Cancelar</button>
             </div>
         </div>
     </div>
@@ -516,9 +576,16 @@
             const t = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
             return t.charAt(0).toUpperCase() + t.slice(1);
         }
+        // Aplicación de navegación: se guarda en este teléfono (cada móvil puede usar una distinta)
+        let navApp = 'waze';
+        try { if (localStorage.getItem('navApp') === 'maps') navApp = 'maps'; } catch (e) {}
         function wazeUrl(o) {
             const destino = [o.direccion, o.poblacion].filter(Boolean).join(', ');
+            if (navApp === 'maps') return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(destino);
             return 'https://waze.com/ul?q=' + encodeURIComponent(destino) + '&navigate=yes';
+        }
+        function pintarNav() {
+            document.querySelectorAll('[data-nav]').forEach(b => b.classList.toggle('primario', b.dataset.nav === navApp));
         }
         function hashId(txt) {
             let h = 5381;
@@ -768,11 +835,99 @@
         }
 
         // --- RENDERIZADO PRINCIPAL ---
+        // ===== Filtros (solo en este teléfono) =====
+        const ESTADOS_FILTRO = [['sinvisitar', 'Sin visitar'], ['visitada', 'Visitadas'], ['manana', '☀ Por la mañana'], ['pendiente', '⏳ Pendientes'], ['nota', '📝 Con nota']];
+        let filtros = { estado: [], tipo: [], prov: [] };
+        try { const f = JSON.parse(localStorage.getItem('filtros') || 'null'); if (f) filtros = { estado: f.estado || [], tipo: f.tipo || [], prov: f.prov || [] }; } catch (e) {}
+        const hayFiltros = () => filtros.estado.length + filtros.tipo.length + filtros.prov.length > 0;
+        function guardarFiltros() { try { localStorage.setItem('filtros', JSON.stringify(filtros)); } catch (e) {} }
+        function cumpleFiltros(o) {
+            if (!hayFiltros()) return true;
+            if (filtros.tipo.length && !filtros.tipo.includes(tipoBonito(o.tipo) || 'Sin tipo')) return false;
+            if (filtros.prov.length && !filtros.prov.includes(o.provincia || 'Sin provincia')) return false;
+            return filtros.estado.every(e =>
+                e === 'sinvisitar' ? !visitadas[o.id] :
+                e === 'visitada' ? !!visitadas[o.id] :
+                e === 'manana' ? !!mananas[o.id] :
+                e === 'pendiente' ? (!!pendientes[o.id] && !visitadas[o.id]) :
+                e === 'nota' ? !!notas[o.id] : true);
+        }
+        function textoFiltros() {
+            const nom = Object.fromEntries(ESTADOS_FILTRO);
+            return filtros.estado.map(e => nom[e]).concat(filtros.tipo, filtros.prov).join(' · ');
+        }
+        function pintarFiltros() {
+            const n = filtros.estado.length + filtros.tipo.length + filtros.prov.length;
+            $('btnFiltros').classList.toggle('on', n > 0);
+            $('btnFiltros').textContent = '⚙ Filtros' + (n ? ' (' + n + ')' : '');
+            $('filtroResumen').textContent = textoFiltros();
+            $('btnFiltroQuitar').style.display = n ? 'inline-block' : 'none';
+        }
+        function chips(cont, opciones, sel, clave) {
+            $(cont).innerHTML = opciones.length ? opciones.map(([v, t]) =>
+                `<button class="chip${sel.includes(v) ? ' on' : ''}" data-fk="${clave}" data-fv="${esc(v)}">${esc(t)}</button>`).join('')
+                : '<span style="color:var(--text-muted);font-size:.9em;">—</span>';
+        }
+        function pintarChipsFiltros() {
+            const vis = datosGlobales.filter(o => !ocultos.includes(o.id));
+            const tipos = [...new Set(vis.map(o => tipoBonito(o.tipo) || 'Sin tipo'))].sort();
+            const provs = [...new Set(vis.map(o => o.provincia || 'Sin provincia'))].sort();
+            chips('chipsEstado', ESTADOS_FILTRO, filtros.estado, 'estado');
+            chips('chipsTipo', tipos.map(t => [t, t]), filtros.tipo, 'tipo');
+            chips('chipsProv', provs.map(t => [t, t]), filtros.prov, 'prov');
+        }
+        function alternarFiltro(clave, valor) {
+            const a = filtros[clave], i = a.indexOf(valor);
+            if (i >= 0) a.splice(i, 1); else a.push(valor);
+            // «sin visitar» y «visitadas» se excluyen entre sí
+            if (clave === 'estado' && i < 0) {
+                if (valor === 'sinvisitar') filtros.estado = a.filter(x => x !== 'visitada');
+                if (valor === 'visitada') filtros.estado = a.filter(x => x !== 'sinvisitar');
+            }
+            guardarFiltros(); pintarChipsFiltros(); pintarFiltros(); renderizar();
+        }
+        function limpiarFiltros() { filtros = { estado: [], tipo: [], prov: [] }; guardarFiltros(); pintarChipsFiltros(); pintarFiltros(); renderizar(); }
+
+        // ===== Aviso de la semana siguiente (viernes por la tarde, sábado y domingo) =====
+        function infoSemanaSiguiente(ahora) {
+            const d = ahora.getDay(), h = ahora.getHours();
+            if (!(d === 6 || d === 0 || (d === 5 && h >= 15))) return null;
+            const actual = lunesIso(hoyIso());
+            const ini = parseFecha(actual);
+            const sig = (() => { const x = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 7); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); })();
+            const vis = datosGlobales.filter(o => !ocultos.includes(o.id));
+            const prox = vis.filter(o => semanaDe(o) === sig);
+            if (!prox.length) return null;
+            const provs = [...new Set(prox.map(o => o.provincia).filter(Boolean))];
+            const aps = prox.reduce((a, o) => a + (parseInt(o.aps, 10) || 0), 0);
+            const dias = new Set(prox.map(fechaIso)).size;
+            const pend = vis.filter(o => semanaDe(o) === actual && !visitadas[o.id]).length;
+            const arrastre = vis.filter(o => semanaDe(o) === actual && pendientes[o.id] && !visitadas[o.id]).length;
+            return { sig, n: prox.length, provs, aps, dias, pend, arrastre };
+        }
+        function pintarBannerSemana(mostrar) {
+            const el = $('bannerSemana');
+            const i = mostrar ? infoSemanaSiguiente(new Date()) : null;
+            if (!i) { el.innerHTML = ''; return; }
+            const ini = parseFecha(i.sig), fin = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6);
+            const partes = [i.n + ' oficina' + (i.n === 1 ? '' : 's'), i.dias + ' día' + (i.dias === 1 ? '' : 's')];
+            if (i.provs.length) partes.push(i.provs.join(', '));
+            if (i.aps) partes.push(i.aps + ' APs');
+            let sub = '';
+            if (i.arrastre) sub = '⏳ Te quedan ' + i.arrastre + ' pendiente' + (i.arrastre === 1 ? '' : 's') + ' de esta semana';
+            else if (i.pend) sub = 'Te quedan ' + i.pend + ' sin visitar de esta semana';
+            el.innerHTML = `<div class="banner-sem"><div class="bs-txt"><div class="bs-t">📆 Próxima semana (${esc(fmtCorta(ini))} – ${esc(fmtCorta(fin))})</div>` +
+                `<div>${esc(partes.join(' · '))}</div>${sub ? '<div class="bs-sub">' + esc(sub) + '</div>' : ''}</div>` +
+                `<button id="btnVerSigSemana" data-sem="${i.sig}">Ver</button></div>`;
+        }
+
         function renderizar() {
             const cont = $('captureArea');
             const vacio = datosGlobales.length === 0;
 
             $('searchBox').style.display = vacio ? 'none' : 'block';
+            $('filtroBar').style.display = vacio ? 'none' : 'flex';
+            pintarFiltros();
             if (vacio) {
                 $('viewSwitch').style.display = 'none';
                 $('dayNav').style.display = 'none';
@@ -782,6 +937,7 @@
             }
 
             let lista = datosGlobales.filter(o => !ocultos.includes(o.id));
+            if (hayFiltros()) lista = lista.filter(cumpleFiltros);
             const buscando = query.trim() !== '';
             if (buscando) {
                 const q = norm(query.trim());
@@ -824,10 +980,12 @@
 
             const modo = buscando ? 'busqueda' : (modoDia ? 'dia' : (modoSemana ? 'semana' : 'todo'));
             $('resumenDia').innerHTML = htmlResumen(lista, modo);
+            pintarBannerSemana(!buscando && (modoDia || vista === 'todo'));
 
             if (lista.length === 0) {
                 let msg;
                 if (buscando) msg = `Sin resultados para «${esc(query.trim())}»`;
+                else if (hayFiltros()) msg = 'Ninguna oficina cumple los filtros: ' + esc(textoFiltros());
                 else if (modoDia) msg = diaSel === hoyIso() ? 'Hoy no tienes oficinas 🎉' : 'No hay oficinas este día';
                 else if (modoSemana) msg = 'No hay oficinas esta semana';
                 else if (modoPend) msg = 'No tienes oficinas pendientes ✓';
@@ -1024,7 +1182,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        const APP_VERSION = 'v18';
+        const APP_VERSION = 'v22';
         // Aviso temporal abajo de la pantalla
         function avisar(texto) {
             let t = $('toastAviso');
@@ -1114,9 +1272,67 @@
                 return;
             }
 
+            const info = { idxAps, headers };
+            if (!datosGlobales.length) { aplicarPlan(oficinas, [], info, ''); return; }
+            // Ya hay una planificación: se propone actualizar solo lo que cambia
+            const f = fusionarPlan(datosGlobales, oficinas);
+            if (!f.anadidas.length && !f.cambian.length && !f.quitadas.length) { aplicarPlan(f.resultado, f.migrar, info, 'La planificación ya estaba al día'); return; }
+            importPend = { f, oficinas, info };
+            abrirImportacion(f);
+        }
+
+        // ===== Actualizar la planificación sin perder lo hecho =====
+        let importPend = null;
+        const claveMov = (o) => norm(o.nombre) + '|' + norm(o.direccion);
+        const semanaPlan = (o) => { const f = fechaOriginal(o); return f && /^\d{4}-\d{2}-\d{2}$/.test(f) ? lunesIso(f) : 'sin'; };
+
+        // Solo se reemplazan las semanas que trae el Excel nuevo; el resto del plan no se toca.
+        // Una oficina que cambia de día conserva sus notas y marcas. Las ya visitadas nunca se borran.
+        function fusionarPlan(actuales, nuevas) {
+            const semNuevas = new Set(nuevas.map(semanaPlan));
+            const fuera = actuales.filter(o => !semNuevas.has(semanaPlan(o)));
+            const enAlcance = actuales.filter(o => semNuevas.has(semanaPlan(o)));
+            const idsViejos = new Set(enAlcance.map(o => o.id)), idsNuevos = new Set(nuevas.map(o => o.id));
+            const iguales = nuevas.filter(o => idsViejos.has(o.id));
+            const libres = nuevas.filter(o => !idsViejos.has(o.id));
+            const migrar = [], cambian = [], quitadas = [], conservadas = [];
+            enAlcance.filter(o => !idsNuevos.has(o.id)).forEach(v => {
+                if (visitadas[v.id]) { conservadas.push(v); return; }
+                const j = libres.findIndex(n => claveMov(n) === claveMov(v));
+                if (j >= 0) { const n = libres.splice(j, 1)[0]; migrar.push({ de: v.id, a: n.id }); cambian.push({ de: v, a: n }); }
+                else quitadas.push(v);
+            });
+            return { resultado: fuera.concat(iguales, cambian.map(c => c.a), conservadas, libres),
+                     migrar, cambian, quitadas, conservadas, anadidas: libres, iguales: iguales.length, fuera: fuera.length,
+                     semanas: [...semNuevas].filter(x => x !== 'sin').sort() };
+        }
+        function listaCorta(arr, f) {
+            const t = arr.slice(0, 6).map(f).map(x => '<li>' + esc(x) + '</li>').join('');
+            return '<ul class="imp-lista">' + t + (arr.length > 6 ? '<li>… y ' + (arr.length - 6) + ' más</li>' : '') + '</ul>';
+        }
+        function abrirImportacion(f) {
+            const dia = (o) => { const d = parseFecha(fechaOriginal(o)); return d ? fmtCorta(d) : 'sin fecha'; };
+            const sem = f.semanas.length ? (f.semanas.length === 1 ? 'la semana del ' + fmtCorta(parseFecha(f.semanas[0]))
+                : f.semanas.length + ' semanas (desde el ' + fmtCorta(parseFecha(f.semanas[0])) + ')') : 'las fechas del Excel';
+            let h = '<div class="imp-sub">El Excel trae ' + sem + '. Solo se actualiza eso; ' + f.fuera + ' oficina' + (f.fuera === 1 ? '' : 's') + ' de otras semanas no se tocan.</div>';
+            if (f.anadidas.length) h += '<div class="imp-t">➕ Nuevas (' + f.anadidas.length + ')</div>' + listaCorta(f.anadidas, o => o.nombre + ' · ' + dia(o));
+            if (f.cambian.length) h += '<div class="imp-t">📅 Cambian de día (' + f.cambian.length + '), conservan notas y marcas</div>' + listaCorta(f.cambian, c => c.a.nombre + ': ' + dia(c.de) + ' → ' + dia(c.a));
+            if (f.quitadas.length) h += '<div class="imp-t">➖ Se quitan (' + f.quitadas.length + ')</div>' + listaCorta(f.quitadas, o => o.nombre + ' · ' + dia(o));
+            if (f.conservadas.length) h += '<div class="imp-t">✓ Se conservan por estar ya visitadas (' + f.conservadas.length + ')</div>' + listaCorta(f.conservadas, o => o.nombre + ' · ' + dia(o));
+            h += '<div class="imp-sub">Sin cambios: ' + f.iguales + '</div>';
+            $('impDetalle').innerHTML = h;
+            $('modalImport').style.display = 'flex';
+        }
+        function aplicarPlan(oficinas, migrar, info, mensaje) {
+            migrar.forEach(m => {
+                if (visitadas[m.de]) visitadas[m.a] = visitadas[m.de];
+                if (mananas[m.de]) mananas[m.a] = mananas[m.de];
+                if (notas[m.de]) notas[m.a] = notas[m.de];
+                if (pendientes[m.de]) pendientes[m.a] = pendientes[m.de];
+            });
             datosGlobales = oficinas;
             guardarJSON('rutas_guardadas', oficinas);
-            // Conserva las marcas de las oficinas que siguen en el Excel nuevo
+            // Conserva las marcas de las oficinas que siguen en el plan
             const ids = new Set(oficinas.map(o => o.id));
             ocultos = ocultos.filter(id => ids.has(id));
             Object.keys(visitadas).forEach(id => { if (!ids.has(id)) delete visitadas[id]; });
@@ -1129,10 +1345,20 @@
             if (sync.codigo) { sync.planSucio = true; guardarSync(); }
             cerrarMenu();
             cambio();
+            if (mensaje) { avisar(mensaje); return; }
             const conAps = oficinas.filter(o => o.aps).length;
-            avisar(oficinas.length + ' oficinas importadas · ' + (idxAps !== -1
-                ? conAps + ' con nº de APs (columna «' + headers[idxAps] + '»)'
-                : '⚠ no encuentro la columna de APs. Columnas del Excel: ' + headers.filter(Boolean).join(', ')));
+            avisar(oficinas.length + ' oficinas importadas · ' + (info.idxAps !== -1
+                ? conAps + ' con nº de APs (columna «' + info.headers[info.idxAps] + '»)'
+                : '⚠ no encuentro la columna de APs. Columnas del Excel: ' + info.headers.filter(Boolean).join(', ')));
+        }
+        function confirmarImportacion(modo) {
+            const ip = importPend; importPend = null;
+            $('modalImport').style.display = 'none';
+            if (!ip) return;
+            if (modo === 'todo') { aplicarPlan(ip.oficinas, [], ip.info, ''); return; }
+            const f = ip.f;
+            aplicarPlan(f.resultado, f.migrar, ip.info, 'Planificación actualizada: ' + f.anadidas.length + ' nuevas · '
+                + f.cambian.length + ' cambian de día · ' + f.quitadas.length + ' quitadas' + (f.conservadas.length ? ' · ' + f.conservadas.length + ' visitadas conservadas' : ''));
         }
 
         // --- EXPORTAR COMO IMAGEN (día / semana / todo) ---
@@ -1299,7 +1525,7 @@
                     return f ? { i: o.id, f: f, n: o.nombre, p: o.poblacion, d: o.direccion, pv: mostrarProv ? (o.provincia || '') : '', t: tipoBonito(o.tipo), a: o.aps || 0, v: visitadas[o.id] || '', m: mananas[o.id] ? 1 : 0, nt: notas[o.id] || '', pe: (pendientes[o.id] && !visitadas[o.id]) ? 1 : 0 } : null;
                 })
                 .filter(Boolean);
-            try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos), texto: multTam('Widget'), check: multTam('Check') })).catch(() => {}); } catch (e) {}
+            try { Promise.resolve(W.actualizar({ datos: JSON.stringify(datos), texto: multTam('Widget'), check: multTam('Check'), nav: navApp })).catch(() => {}); } catch (e) {}
         }
 
         // Recoge lo marcado desde el widget (oficinas visitadas) y lo aplica a la app
@@ -1634,6 +1860,27 @@
                 else if ((b = e.target.closest('[data-ocultar]'))) ocultarOficina(b.dataset.ocultar);
             });
             $('btnSyncCrear').addEventListener('click', syncCrear);
+            document.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
+                navApp = b.dataset.nav === 'maps' ? 'maps' : 'waze';
+                try { localStorage.setItem('navApp', navApp); } catch (e) {}
+                pintarNav(); renderizar(); actualizarWidget();
+            }));
+            pintarNav();
+            $('btnImpAplicar').addEventListener('click', () => confirmarImportacion('cambios'));
+            $('btnImpTodo').addEventListener('click', () => confirmarImportacion('todo'));
+            $('btnImpCancelar').addEventListener('click', () => { importPend = null; $('modalImport').style.display = 'none'; cerrarMenu(); });
+            $('btnFiltros').addEventListener('click', () => { pintarChipsFiltros(); $('modalFiltros').style.display = 'flex'; });
+            $('btnFiltrosCerrar').addEventListener('click', () => { $('modalFiltros').style.display = 'none'; });
+            $('btnFiltrosOk').addEventListener('click', () => { $('modalFiltros').style.display = 'none'; });
+            $('btnFiltrosLimpiar').addEventListener('click', limpiarFiltros);
+            $('btnFiltroQuitar').addEventListener('click', limpiarFiltros);
+            $('bannerSemana').addEventListener('click', (e) => {
+                const b = e.target.closest('#btnVerSigSemana'); if (!b) return;
+                semanaSel = b.dataset.sem; vista = 'semana';
+                try { localStorage.setItem('vista', vista); } catch (err) {}
+                renderizar();
+            });
+            $('modalFiltros').addEventListener('click', (e) => { const b = e.target.closest('[data-fk]'); if (b) alternarFiltro(b.dataset.fk, b.dataset.fv); });
             $('btnSyncUnir').addEventListener('click', syncUnir);
             $('btnSyncOff').addEventListener('click', syncDesactivar);
             $('btnSyncCopiar').addEventListener('click', syncCopiar);

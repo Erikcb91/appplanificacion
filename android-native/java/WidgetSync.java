@@ -101,7 +101,7 @@ final class WidgetSync {
      * Aplica al widget la respuesta de runQuery. Devuelve {cambios, tsMax}.
      * Solo toca visita, mañana, pendiente, nota y día movido; el orden lo trae la app al abrirse.
      */
-    static long[] aplicar(List<WidgetModel.Item> items, String respuesta) {
+    static long[] aplicar(List<WidgetModel.Item> items, String respuesta, java.util.Set<String> enCola) {
         long cambios = 0, max = 0;
         try {
             JSONArray arr = new JSONArray(respuesta);
@@ -116,6 +116,7 @@ final class WidgetSync {
                 if (ts != null && ts > max) max = ts;
                 for (WidgetModel.Item it : items) {
                     if (!id.equals(it.i)) continue;
+                    if (enCola != null && enCola.contains(id)) continue;   // tic tuyo aún sin subir: manda el tuyo
                     boolean cambio = false;
                     String v = sv(f, "v");
                     if (v != null && !v.equals(it.v)) { it.v = v; cambio = true; }
@@ -210,7 +211,10 @@ final class WidgetSync {
                     + "{\"field\":{\"fieldPath\":\"ts\"},\"op\":\"GREATER_THAN\",\"value\":{\"integerValue\":\"" + desde + "\"}}}}}";
             String resp = http(base(c) + "/grupos/" + prefs(c).getString("codigo", "") + ":runQuery" + clave(c), q);
             List<WidgetModel.Item> items = WidgetModel.parse(WidgetStore.leer(c));
-            long[] r = aplicar(items, resp);
+            JSONArray q0 = cola(c);
+            java.util.Set<String> enCola = new java.util.HashSet<String>();
+            for (int k = 0; k < q0.length(); k++) enCola.add(q0.optString(k));
+            long[] r = aplicar(items, resp, enCola);
             if (r[0] > 0) WidgetStore.guardar(c, WidgetModel.toJson(items));
             if (r[1] > prefs(c).getLong("pull", 0L)) prefs(c).edit().putLong("pull", r[1]).apply();
             return (int) r[0];

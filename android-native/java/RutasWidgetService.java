@@ -23,13 +23,16 @@ public class RutasWidgetService extends RemoteViewsService {
         return new Fabrica(getApplicationContext());
     }
 
-    static String urlWaze(WidgetModel.Item it) {
+    /** Dirección de navegación según la aplicación elegida en el menú ("waze" o "maps"). */
+    static String urlNav(WidgetModel.Item it, String nav) {
         String destino = it.d.isEmpty() ? it.p : (it.p.isEmpty() ? it.d : it.d + ", " + it.p);
         try {
-            return "https://waze.com/ul?q=" + URLEncoder.encode(destino, "UTF-8") + "&navigate=yes";
+            destino = URLEncoder.encode(destino, "UTF-8");
         } catch (Exception e) {
-            return "https://waze.com/ul?q=" + destino + "&navigate=yes";
+            // se deja sin codificar
         }
+        if ("maps".equals(nav)) return "https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=" + destino;
+        return "https://waze.com/ul?q=" + destino + "&navigate=yes";
     }
 
     static class Fabrica implements RemoteViewsFactory {
@@ -134,7 +137,7 @@ public class RutasWidgetService extends RemoteViewsService {
 
             Intent waze = new Intent();
             waze.putExtra(WidgetActionActivity.EXTRA_ACCION, WidgetActionActivity.ACCION_WAZE);
-            waze.putExtra(WidgetActionActivity.EXTRA_URL, urlWaze(it));
+            waze.putExtra(WidgetActionActivity.EXTRA_URL, urlNav(it, WidgetStore.nav(ctx)));
             r.setOnClickFillInIntent(R.id.item_info, waze);
             return r;
         }

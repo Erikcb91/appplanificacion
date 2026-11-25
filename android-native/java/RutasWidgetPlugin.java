@@ -26,6 +26,7 @@ public class RutasWidgetPlugin extends Plugin {
         WidgetStore.guardarAjustes(ctx,
                 Math.max(0.5f, Math.min(2f, texto == null ? 1f : texto)),
                 Math.max(0.5f, Math.min(2f, check == null ? 1f : check)));
+        WidgetStore.guardarNav(ctx, call.getString("nav", "waze"));
         RutasWidgetProvider.actualizarTodos(ctx);
         call.resolve();
     }

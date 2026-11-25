@@ -43,6 +43,14 @@ final class WidgetStore {
         prefs(ctx).edit().putFloat("texto_mul", texto).putFloat("check_mul", check).apply();
     }
 
+    static String nav(Context ctx) {
+        return prefs(ctx).getString("nav", "waze");
+    }
+
+    static void guardarNav(Context ctx, String nav) {
+        prefs(ctx).edit().putString("nav", "maps".equals(nav) ? "maps" : "waze").apply();
+    }
+
     static float escala(Context ctx) {
         return prefs(ctx).getFloat("escala", 1f);
     }
