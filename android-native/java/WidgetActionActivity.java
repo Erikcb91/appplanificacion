@@ -27,6 +27,12 @@ public class WidgetActionActivity extends Activity {
             if (ACCION_VISITAR.equals(accion)) {
                 WidgetStore.alternarVisitada(this, i.getStringExtra(EXTRA_ID));
                 RutasWidgetProvider.actualizarTodos(this);
+                if (WidgetSync.activo(this)) {   // sube solo esta oficina, sin abrir la app
+                    Intent subir = new Intent(this, RutasWidgetProvider.class);
+                    subir.setAction(RutasWidgetProvider.ACCION_SUBIR);
+                    subir.putExtra(EXTRA_ID, i.getStringExtra(EXTRA_ID));
+                    sendBroadcast(subir);
+                }
             } else if (ACCION_WAZE.equals(accion)) {
                 String url = i.getStringExtra(EXTRA_URL);
                 if (url != null) {

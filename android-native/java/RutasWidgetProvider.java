@@ -23,6 +23,8 @@ public class RutasWidgetProvider extends AppWidgetProvider {
     static final String ACCION_PREV = "com.erik.rutas.WIDGET_PREV";
     static final String ACCION_NEXT = "com.erik.rutas.WIDGET_NEXT";
     static final String ACCION_HOY = "com.erik.rutas.WIDGET_HOY";
+    static final String ACCION_SYNC = "com.erik.rutas.WIDGET_SYNC";
+    static final String ACCION_SUBIR = "com.erik.rutas.WIDGET_SUBIR";
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -53,6 +55,38 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         } else if (ACCION_HOY.equals(accion)) {
             WidgetStore.limpiarDia(ctx);
             actualizarTodos(ctx);
+        } else if (ACCION_SYNC.equals(accion) || ACCION_SUBIR.equals(accion)) {
+            final boolean subir = ACCION_SUBIR.equals(accion);
+            final String id = intent.getStringExtra(WidgetActionActivity.EXTRA_ID);
+            final Context app = ctx.getApplicationContext();
+            final PendingResult pr = goAsync();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String msg = null;
+                    try {
+                        if (subir) {
+                            WidgetSync.subirVisita(app, id);
+                        } else {
+                            int n = WidgetSync.refrescar(app);
+                            msg = n < 0 ? "Sin conexión: no se pudo actualizar"
+                                    : (n == 0 ? "Todo al día" : "Actualizado: " + n + (n == 1 ? " oficina" : " oficinas"));
+                        }
+                        actualizarTodos(app);
+                    } catch (Exception e) {
+                        msg = subir ? null : "No se pudo actualizar";
+                    } finally {
+                        pr.finish();
+                    }
+                    if (msg != null) {
+                        final String m = msg;
+                        new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() { android.widget.Toast.makeText(app, m, android.widget.Toast.LENGTH_SHORT).show(); }
+                        });
+                    }
+                }
+            }).start();
         }
     }
 
@@ -115,6 +149,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.widget_prov, sp, 9.5f * k * t);
         v.setTextViewTextSize(R.id.widget_resumen, sp, 11.5f * k * t);
         v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
+        v.setTextViewTextSize(R.id.widget_sync, sp, 20 * k);
         v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
         v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
         if (android.os.Build.VERSION.SDK_INT >= 31) {
@@ -139,6 +174,8 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextColor(R.id.widget_titulo, cabFg);
         v.setTextColor(R.id.widget_prov, cabFg);
         v.setTextColor(R.id.widget_prev, acento);
+        v.setTextColor(R.id.widget_sync, acento);
+        v.setViewVisibility(R.id.widget_sync, WidgetSync.activo(ctx) ? View.VISIBLE : View.GONE);
         v.setTextColor(R.id.widget_next, acento);
         List<WidgetModel.Item> delDia = WidgetModel.delDia(items, dia);
         String prov = WidgetModel.unir(WidgetModel.provincias(delDia), " · ");
@@ -180,6 +217,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.widget_prev, broadcast(ctx, 1, ACCION_PREV));
         v.setOnClickPendingIntent(R.id.widget_next, broadcast(ctx, 2, ACCION_NEXT));
         v.setOnClickPendingIntent(R.id.widget_hoy, broadcast(ctx, 3, ACCION_HOY));
+        v.setOnClickPendingIntent(R.id.widget_sync, broadcast(ctx, 5, ACCION_SYNC));
 
         Intent abrir = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         if (abrir != null) {

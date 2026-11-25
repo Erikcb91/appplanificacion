@@ -31,6 +31,15 @@ public class RutasWidgetPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void configurarSync(PluginCall call) {
+        Double ult = call.getDouble("ultimoPull", 0d);
+        WidgetSync.configurar(getContext(), call.getString("codigo", ""), call.getString("apiKey", ""),
+                call.getString("proyecto", ""), ult == null ? 0L : (long) ult.doubleValue());
+        RutasWidgetProvider.actualizarTodos(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
     public void obtener(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("datos", WidgetStore.leer(getContext()));

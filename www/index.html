@@ -106,6 +106,9 @@
         .hidden-list-title { font-size: 0.9em; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; border-top: 1px solid var(--border-color); padding-top: 15px;}
         .hidden-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--btn-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); }
         .btn-restore-day { background-color: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8em; cursor: pointer; }
+        .modal-head { position: sticky; top: -24px; z-index: 5; display: flex; align-items: center; justify-content: space-between; background: var(--modal-bg); margin: -24px -24px 8px; padding: 18px 16px 8px 24px; }
+        .modal-head h2 { margin: 0; }
+        .btn-x { width: 38px; height: 38px; border: none; border-radius: 50%; background: var(--btn-bg); color: var(--text-main); font-size: 18px; font-weight: 700; cursor: pointer; flex: none; }
         .btn-close { width: 100%; background-color: var(--btn-bg); color: var(--text-main); border: none; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1em; cursor: pointer; margin-top: 15px; }
 
         #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
@@ -124,7 +127,7 @@
 
         /* ===== Selector de vista y navegación de días ===== */
         .view-switch { display: flex; background-color: var(--btn-bg); border-radius: 12px; padding: 4px; margin-bottom: 12px; gap: 4px; }
-        .view-switch button { flex: 1; border: none; background: transparent; color: var(--text-muted); padding: 10px 8px; border-radius: 9px; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+        .view-switch button { flex: 1; border: none; background: transparent; color: var(--text-muted); padding: 10px 2px; border-radius: 9px; font-weight: 600; font-size: 13px; font-family: inherit; cursor: pointer; }
         .view-switch button.active { background-color: var(--card-bg); color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
 
         .day-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -276,6 +279,7 @@
             <button data-vista="dia" class="active">📅 Día</button>
             <button data-vista="semana">🗓 Semana</button>
             <button data-vista="todo">🗂 Todo</button>
+            <button data-vista="pend" id="tabPend">⏳ Pendientes</button>
         </div>
 
         <div class="day-nav" id="dayNav" style="display:none;">
@@ -295,7 +299,7 @@
 
     <div id="modalMenu">
         <div class="modal-content">
-            <h2>Opciones</h2>
+            <div class="modal-head"><h2>Opciones</h2><button id="btnCloseMenu" class="btn-x" aria-label="Cerrar menú">✕</button></div>
             <label for="fileInput" class="import-label">
                 Importar Excel (.xlsx)
             </label>
@@ -354,7 +358,7 @@
             </div>
 
             <div id="appVersion" style="text-align:center;font-size:12px;color:var(--text-muted);margin:10px 0 4px;"></div>
-            <button id="btnCloseMenu" class="btn-close">Cerrar Menú</button>
+            
         </div>
     </div>
 
@@ -448,7 +452,7 @@
         let pendientes = {};      // id -> 1 (dejada pendiente)
         let movidas = {};         // id -> AAAA-MM-DD (día al que se ha cambiado)
         let orden = {};           // id -> posición manual dentro de su día
-        let vista = 'dia';        // 'dia' | 'semana' | 'todo'
+        let vista = 'dia';        // 'dia' | 'semana' | 'todo' | 'pend'
         let diaSel = '';          // día mostrado en la vista Día (AAAA-MM-DD)
         let semanaSel = '';       // lunes de la semana mostrada en la vista Semana (AAAA-MM-DD)
         let query = '';           // texto del buscador
@@ -787,6 +791,10 @@
             const modoSemana = !buscando && vista === 'semana';
             if (modoDia) lista = lista.filter(o => fechaIso(o) === diaSel);
             if (modoSemana) lista = lista.filter(o => semanaDe(o) === semanaSel);
+            const modoPend = !buscando && vista === 'pend';
+            if (modoPend) lista = lista.filter(o => pendientes[o.id] && !visitadas[o.id]);
+            const nPend = datosGlobales.filter(o => !ocultos.includes(o.id) && pendientes[o.id] && !visitadas[o.id]).length;
+            $('tabPend').textContent = '⏳ Pendientes' + (nPend ? ' (' + nPend + ')' : '');
 
             $('btnLimpiarBusqueda').style.display = buscando ? 'block' : 'none';
             $('viewSwitch').style.display = buscando ? 'none' : 'flex';
@@ -822,6 +830,7 @@
                 if (buscando) msg = `Sin resultados para «${esc(query.trim())}»`;
                 else if (modoDia) msg = diaSel === hoyIso() ? 'Hoy no tienes oficinas 🎉' : 'No hay oficinas este día';
                 else if (modoSemana) msg = 'No hay oficinas esta semana';
+                else if (modoPend) msg = 'No tienes oficinas pendientes ✓';
                 else msg = 'Todas las oficinas están ocultas. Abre el menú para restaurarlas.';
                 cont.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted);"><p style="margin:0;">${msg}</p></div>`;
                 return;
@@ -1015,7 +1024,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        const APP_VERSION = 'v16';
+        const APP_VERSION = 'v18';
         // Aviso temporal abajo de la pantalla
         function avisar(texto) {
             let t = $('toastAviso');
@@ -1329,6 +1338,14 @@
         function guardarSync() {
             guardarJSON('sync_config', { codigo: sync.codigo, espejo: sync.espejo, planTs: sync.planTs,
                                          planSucio: sync.planSucio, ultimoPull: sync.ultimoPull });
+            // El widget necesita el grupo para su botón ⟳ y para subir sus tics sin abrir la app
+            try {
+                if (esNativo()) {
+                    const W = plugin('RutasWidget');
+                    if (W && typeof W.configurarSync === 'function')
+                        Promise.resolve(W.configurarSync({ codigo: sync.codigo || '', apiKey: FB.apiKey, proyecto: FB.projectId, ultimoPull: sync.ultimoPull || 0 })).catch(() => {});
+                }
+            } catch (e) {}
         }
         function cargarSync() {
             const c = leerJSON('sync_config', null);
@@ -1487,7 +1504,7 @@
         function programarSync() {
             if (!sync.codigo || sync.aplicando) return;
             clearTimeout(syncTimer);
-            syncTimer = setTimeout(sincronizar, 1500);
+            syncTimer = setTimeout(sincronizar, 300);
         }
 
         // --- Interfaz ---
@@ -1599,7 +1616,11 @@
                 renderizar();
             });
             // Al volver a la app, recoge lo que se marcó en el widget
-            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') alVolver(); });
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') alVolver();
+                else if (sync.codigo) { clearTimeout(syncTimer); sincronizar(); }   // al salir de la app, sube ya lo pendiente
+            });
+            window.addEventListener('pagehide', () => { if (sync.codigo) { clearTimeout(syncTimer); sincronizar(); } });
             window.addEventListener('focus', alVolver);
 
             // Los botones de cada oficina se crean al renderizar: delegación de eventos
@@ -1635,7 +1656,7 @@
                 $('themeToggle').checked = true;
             }
             const vGuardada = localStorage.getItem('vista');
-            vista = (vGuardada === 'todo' || vGuardada === 'semana') ? vGuardada : 'dia';
+            vista = (vGuardada === 'todo' || vGuardada === 'semana' || vGuardada === 'pend') ? vGuardada : 'dia';
             ['App', 'Widget', 'Check'].forEach(k => {
                 let v = 0;
                 try { v = parseInt(localStorage.getItem('tamN' + k), 10); } catch (err) {}
@@ -1659,6 +1680,7 @@
 
             cargarSync();
             pintarSync();
+            if (sync.codigo) guardarSync();
             renderizar();
             alVolver().then(actualizarWidget);
             setInterval(() => { if (document.visibilityState === 'visible') sincronizar(); }, 25000);
