@@ -15,6 +15,8 @@ public class WidgetActionActivity extends Activity {
     static final String EXTRA_ACCION = "accion";
     static final String EXTRA_ID = "id";
     static final String EXTRA_URL = "url";
+    static final String EXTRA_V = "v";
+    static final String EXTRA_T = "t";
     static final String ACCION_VISITAR = "visitar";
     static final String ACCION_WAZE = "waze";
 
@@ -25,12 +27,18 @@ public class WidgetActionActivity extends Activity {
             Intent i = getIntent();
             String accion = i.getStringExtra(EXTRA_ACCION);
             if (ACCION_VISITAR.equals(accion)) {
-                WidgetStore.alternarVisitada(this, i.getStringExtra(EXTRA_ID));
+                String id = i.getStringExtra(EXTRA_ID);
+                long t = System.currentTimeMillis();   // hora real del toque
+                WidgetStore.alternarVisitada(this, id);
+                String v = WidgetStore.visitaDe(this, id);
+                WidgetStore.registrarToque(this, id, v, t);
                 RutasWidgetProvider.actualizarTodos(this);
                 if (WidgetSync.activo(this)) {   // sube solo esta oficina, sin abrir la app
                     Intent subir = new Intent(this, RutasWidgetProvider.class);
                     subir.setAction(RutasWidgetProvider.ACCION_SUBIR);
-                    subir.putExtra(EXTRA_ID, i.getStringExtra(EXTRA_ID));
+                    subir.putExtra(EXTRA_ID, id);
+                    subir.putExtra(EXTRA_V, v);
+                    subir.putExtra(EXTRA_T, t);
                     sendBroadcast(subir);
                 }
             } else if (ACCION_WAZE.equals(accion)) {

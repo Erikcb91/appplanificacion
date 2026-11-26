@@ -133,6 +133,11 @@
         .banner-sem .bs-t { font-weight: 700; }
         .banner-sem .bs-sub { color: var(--text-muted); font-size: 0.92em; margin-top: 2px; }
         .banner-sem button { border: none; background: var(--primary); color: #fff; font-weight: 700; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 10px; cursor: pointer; flex: none; }
+        .imp-check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9em; margin: 12px 0 4px; }
+        .hist-dia { font-weight: 700; margin: 12px 0 4px; }
+        .hist-item { font-size: 0.9em; padding: 4px 0; border-bottom: 1px solid var(--border-color); }
+        .hist-item small { color: var(--text-muted); margin-right: 6px; }
+        .tag-fuera { font-size: 0.78em; font-weight: 700; color: #b45309; background: none; border: none; padding: 0; font-family: inherit; cursor: pointer; text-decoration: underline; }
         .imp-sub { font-size: 0.88em; color: var(--text-muted); margin: 8px 0; }
         .imp-t { font-weight: 700; margin-top: 10px; }
         .imp-lista { margin: 4px 0 0; padding-left: 20px; font-size: 0.9em; }
@@ -328,6 +333,13 @@
                 Importar Excel (.xlsx)
             </label>
             <input type="file" id="fileInput" accept=".xlsx, .xls">
+            <div class="fila-botones-sync" style="margin-top:8px;">
+                <button class="btn-sync" id="btnHistorial">📜 Historial de cambios</button>
+                <button class="btn-sync" id="btnDeshacerImp" style="display:none;">↩ Deshacer importación</button>
+            </div>
+            <div class="fila-botones-sync" style="margin-top:6px;">
+                <button class="btn-sync" id="btnQuitarFuera" style="display:none;">⚠ Quitar oficinas fuera del plan</button>
+            </div>
 
             <div id="hiddenDaysSection" style="display: none;">
                 <div class="hidden-list-title">Días con oficinas ocultas</div>
@@ -374,6 +386,14 @@
                 <div id="syncActivo" style="display:none;">
                     <div class="sync-sub">Código del grupo (escríbelo en el otro teléfono):</div>
                     <div id="syncCodigo" class="sync-codigo"></div>
+                    <div class="theme-toggle-container" id="syncBgBox" style="margin-top:10px; padding-top:10px;">
+                        <span class="theme-label">🔋 Sincronizar en segundo plano</span>
+                        <label class="switch">
+                            <input type="checkbox" id="syncBgToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="sync-sub" id="syncBgInfo" style="display:none;">Mantiene el widget al día con la app cerrada (cada ~15 s con la pantalla encendida). Android muestra una notificación mínima y silenciosa; puedes ocultarla desde los ajustes de notificaciones de la app. Para que no la detenga, pon la batería de la app en «Sin restricciones».</div>
                     <div class="fila-botones-sync">
                         <button class="btn-sync" id="btnSyncCopiar">Copiar código</button>
                         <button class="btn-sync" id="btnSyncOff">Desactivar</button>
@@ -423,10 +443,19 @@
         </div>
     </div>
 
+    <div id="modalHistorial" class="modal-small">
+        <div class="modal-content">
+            <div class="modal-head"><h2>Historial de cambios</h2><button id="btnHistCerrar" class="btn-x" aria-label="Cerrar">✕</button></div>
+            <div class="imp-sub">Cambios del plan guardados en este teléfono.</div>
+            <div id="histLista"></div>
+        </div>
+    </div>
+
     <div id="modalImport" class="modal-small">
         <div class="modal-content">
             <h2>Actualizar planificación</h2>
             <div id="impDetalle"></div>
+            <label id="impQuitarBox" class="imp-check" style="display:none;"><input type="checkbox" id="impQuitar"> Quitar del plan las oficinas que ya no están en el Excel</label>
             <div class="fila-botones" style="flex-direction:column;">
                 <button id="btnImpAplicar" class="primario">Aplicar solo estos cambios</button>
                 <button id="btnImpTodo">Reemplazar todo (borra lo anterior)</button>
@@ -718,6 +747,7 @@
             const marcas = (esManana ? `<span class="tag-manana">☀ Por la mañana</span> ` : '') +
                            (esPend ? `<span class="tag-pend">⏳ Pendiente</span> ` : '') +
                            (movidas[o.id] && orig ? `<span class="tag-movida">↪ Movida (era el ${esc(fmtCorta(parseFecha(orig)))})</span> ` : '') +
+                           (o.fuera && !hora ? `<button class="tag-fuera" data-quitarfuera="${o.id}" data-html2canvas-ignore="true">⚠ Fuera de la planificación nueva · quitar</button> ` : '') +
                            (hora ? `<span class="visit-time">✓ Visitada a las ${esc(hora)}</span>` : '');
             const herramientas = interactivo ? `
                 <span class="office-tools" data-html2canvas-ignore="true">
@@ -1011,6 +1041,7 @@
             guardarJSON('oficinas_pendientes', pendientes);
             guardarJSON('oficinas_movidas', movidas);
             guardarJSON('oficinas_orden', orden);
+            if (!sync.aplicando) marcarLocales();
             renderizar();
             actualizarWidget();
             programarSync();
@@ -1095,7 +1126,9 @@
         function cambiarDiaOficina(iso) {
             const o = oficinaPorId(moverId); if (!o) return;
             if (!iso || !parseFecha(iso)) { avisar('Elige un día'); return; }
+            const antes = fechaIso(o);
             if (iso === fechaOriginal(o)) delete movidas[o.id]; else movidas[o.id] = iso;
+            anotar('↪ ' + o.nombre + ' movida: ' + fmtDiaLargo(antes) + ' → ' + fmtDiaLargo(iso));
             delete orden[o.id];   // al día nuevo entra la última
             const d = parseFecha(iso);
             cerrarMover();
@@ -1182,7 +1215,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        const APP_VERSION = 'v22';
+        const APP_VERSION = 'v25';
         // Aviso temporal abajo de la pantalla
         function avisar(texto) {
             let t = $('toastAviso');
@@ -1273,12 +1306,84 @@
             }
 
             const info = { idxAps, headers };
-            if (!datosGlobales.length) { aplicarPlan(oficinas, [], info, ''); return; }
+            if (!datosGlobales.length) { anotar('📥 Primera importación: ' + oficinas.length + ' oficinas'); aplicarPlan(oficinas, [], info, ''); return; }
             // Ya hay una planificación: se propone actualizar solo lo que cambia
             const f = fusionarPlan(datosGlobales, oficinas);
-            if (!f.anadidas.length && !f.cambian.length && !f.quitadas.length) { aplicarPlan(f.resultado, f.migrar, info, 'La planificación ya estaba al día'); return; }
+            if (!f.anadidas.length && !f.cambian.length && !f.quitadas.length) { aplicarPlan(f.resultado.concat(f.yaFuera), f.migrar, info, 'La planificación ya estaba al día'); return; }
             importPend = { f, oficinas, info };
             abrirImportacion(f);
+        }
+
+        // ===== Historial de cambios del plan y copia para deshacer importaciones =====
+        let historial = leerJSON('historial_plan', []);
+        function anotar(texto) {
+            historial.unshift({ t: Date.now(), x: texto });
+            if (historial.length > 400) historial.length = 400;
+            guardarJSON('historial_plan', historial);
+        }
+        function fmtDiaLargo(iso) {
+            const d = parseFecha(iso); return d ? fmtCorta(d) : 'sin fecha';
+        }
+        function abrirHistorial() {
+            if (!historial.length) { $('histLista').innerHTML = '<div class="imp-sub">Todavía no hay cambios guardados.</div>'; }
+            else {
+                let h = '', ult = '';
+                historial.forEach(e => {
+                    const d = new Date(e.t);
+                    const dia = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                    if (dia !== ult) { h += '<div class="hist-dia">' + esc(dia.charAt(0).toUpperCase() + dia.slice(1)) + '</div>'; ult = dia; }
+                    h += '<div class="hist-item"><small>' + esc(d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })) + '</small>' + esc(e.x) + '</div>';
+                });
+                $('histLista').innerHTML = h;
+            }
+            $('modalHistorial').style.display = 'flex';
+        }
+        let copias = leerJSON('copias_import', []);
+        function guardarCopia(etiqueta) {
+            if (!datosGlobales.length) return;
+            copias.unshift({ t: Date.now(), e: etiqueta, d: JSON.parse(JSON.stringify({ datosGlobales, ocultos, visitadas, mananas, notas, pendientes, movidas, orden })) });
+            if (copias.length > 3) copias.length = 3;
+            try { localStorage.setItem('copias_import', JSON.stringify(copias)); } catch (e) { copias.length = 1; try { localStorage.setItem('copias_import', JSON.stringify(copias)); } catch (e2) {} }
+            pintarCopia();
+        }
+        function pintarCopia() {
+            const b = $('btnDeshacerImp'); if (!b) return;
+            b.style.display = copias.length ? 'block' : 'none';
+            if (copias.length) b.textContent = '↩ Deshacer importación (' + new Date(copias[0].t).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ')';
+            const n = datosGlobales.filter(o => o.fuera).length;
+            $('btnQuitarFuera').style.display = n ? 'block' : 'none';
+            $('btnQuitarFuera').textContent = '⚠ Quitar oficinas fuera del plan (' + n + ')';
+        }
+        function deshacerImportacion() {
+            if (!copias.length) return;
+            const c = copias[0];
+            if (!confirm('¿Volver a como estaba antes de la importación del ' + new Date(c.t).toLocaleString('es-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + '? Se perderán los cambios hechos desde entonces.')) return;
+            copias.shift();
+            try { localStorage.setItem('copias_import', JSON.stringify(copias)); } catch (e) {}
+            const d = JSON.parse(JSON.stringify(c.d));
+            datosGlobales = d.datosGlobales; ocultos = d.ocultos; visitadas = d.visitadas; mananas = d.mananas;
+            notas = d.notas; pendientes = d.pendientes; movidas = d.movidas; orden = d.orden;
+            guardarJSON('rutas_guardadas', datosGlobales);
+            anotar('↩ Importación deshecha: vuelve el plan anterior (' + datosGlobales.length + ' oficinas)');
+            if (sync.codigo) { sync.planSucio = true; guardarSync(); }
+            diaSel = diaPorDefecto(); semanaSel = semanaPorDefecto();
+            cerrarMenu(); cambio(); pintarCopia();
+            avisar('Importación deshecha');
+        }
+        function quitarFuera(id) {
+            const lista = id ? datosGlobales.filter(o => o.id === id && o.fuera) : datosGlobales.filter(o => o.fuera);
+            if (!lista.length) return;
+            if (!confirm(id ? '¿Quitar «' + lista[0].nombre + '» del plan?' : '¿Quitar ' + lista.length + ' oficina(s) que ya no están en la planificación?')) return;
+            guardarCopia('Quitar oficinas fuera del plan');
+            const ids = new Set(lista.map(o => o.id));
+            datosGlobales = datosGlobales.filter(o => !ids.has(o.id));
+            [visitadas, mananas, notas, pendientes, movidas, orden].forEach(m => ids.forEach(i => { delete m[i]; }));
+            ocultos = ocultos.filter(i => !ids.has(i));
+            guardarJSON('rutas_guardadas', datosGlobales);
+            lista.forEach(o => anotar('➖ Quitada del plan: ' + o.nombre + ' (' + fmtDiaLargo(fechaOriginal(o)) + ')'));
+            if (sync.codigo) { sync.planSucio = true; guardarSync(); }
+            cambio(); pintarCopia();
+            avisar(lista.length + ' oficina(s) quitada(s) del plan');
         }
 
         // ===== Actualizar la planificación sin perder lo hecho =====
@@ -1295,15 +1400,16 @@
             const idsViejos = new Set(enAlcance.map(o => o.id)), idsNuevos = new Set(nuevas.map(o => o.id));
             const iguales = nuevas.filter(o => idsViejos.has(o.id));
             const libres = nuevas.filter(o => !idsViejos.has(o.id));
-            const migrar = [], cambian = [], quitadas = [], conservadas = [];
+            const migrar = [], cambian = [], quitadas = [], conservadas = [], yaFuera = [];
             enAlcance.filter(o => !idsNuevos.has(o.id)).forEach(v => {
                 if (visitadas[v.id]) { conservadas.push(v); return; }
                 const j = libres.findIndex(n => claveMov(n) === claveMov(v));
                 if (j >= 0) { const n = libres.splice(j, 1)[0]; migrar.push({ de: v.id, a: n.id }); cambian.push({ de: v, a: n }); }
+                else if (v.fuera) yaFuera.push(v);   // ya estaba marcada como fuera del plan: no es una novedad
                 else quitadas.push(v);
             });
-            return { resultado: fuera.concat(iguales, cambian.map(c => c.a), conservadas, libres),
-                     migrar, cambian, quitadas, conservadas, anadidas: libres, iguales: iguales.length, fuera: fuera.length,
+            return { resultado: fuera.concat(iguales, cambian.map(c => c.a), conservadas, libres),   // las «quitadas» se añaden al confirmar
+                     migrar, cambian, quitadas, conservadas, yaFuera, anadidas: libres, iguales: iguales.length, fuera: fuera.length,
                      semanas: [...semNuevas].filter(x => x !== 'sin').sort() };
         }
         function listaCorta(arr, f) {
@@ -1317,7 +1423,9 @@
             let h = '<div class="imp-sub">El Excel trae ' + sem + '. Solo se actualiza eso; ' + f.fuera + ' oficina' + (f.fuera === 1 ? '' : 's') + ' de otras semanas no se tocan.</div>';
             if (f.anadidas.length) h += '<div class="imp-t">➕ Nuevas (' + f.anadidas.length + ')</div>' + listaCorta(f.anadidas, o => o.nombre + ' · ' + dia(o));
             if (f.cambian.length) h += '<div class="imp-t">📅 Cambian de día (' + f.cambian.length + '), conservan notas y marcas</div>' + listaCorta(f.cambian, c => c.a.nombre + ': ' + dia(c.de) + ' → ' + dia(c.a));
-            if (f.quitadas.length) h += '<div class="imp-t">➖ Se quitan (' + f.quitadas.length + ')</div>' + listaCorta(f.quitadas, o => o.nombre + ' · ' + dia(o));
+            if (f.quitadas.length) h += '<div class="imp-t">⚠ Ya no están en el Excel (' + f.quitadas.length + '): se quedan, marcadas como «fuera del plan»</div>' + listaCorta(f.quitadas, o => o.nombre + ' · ' + dia(o));
+            $('impQuitarBox').style.display = f.quitadas.length ? 'flex' : 'none';
+            $('impQuitar').checked = false;
             if (f.conservadas.length) h += '<div class="imp-t">✓ Se conservan por estar ya visitadas (' + f.conservadas.length + ')</div>' + listaCorta(f.conservadas, o => o.nombre + ' · ' + dia(o));
             h += '<div class="imp-sub">Sin cambios: ' + f.iguales + '</div>';
             $('impDetalle').innerHTML = h;
@@ -1345,6 +1453,7 @@
             if (sync.codigo) { sync.planSucio = true; guardarSync(); }
             cerrarMenu();
             cambio();
+            pintarCopia();
             if (mensaje) { avisar(mensaje); return; }
             const conAps = oficinas.filter(o => o.aps).length;
             avisar(oficinas.length + ' oficinas importadas · ' + (info.idxAps !== -1
@@ -1353,12 +1462,23 @@
         }
         function confirmarImportacion(modo) {
             const ip = importPend; importPend = null;
+            const quitar = $('impQuitar').checked;
             $('modalImport').style.display = 'none';
             if (!ip) return;
-            if (modo === 'todo') { aplicarPlan(ip.oficinas, [], ip.info, ''); return; }
+            guardarCopia(modo === 'todo' ? 'Reemplazar todo' : 'Actualizar planificación');
+            if (modo === 'todo') {
+                anotar('🔁 Importación completa: ' + ip.oficinas.length + ' oficinas (sustituye el plan anterior)');
+                aplicarPlan(ip.oficinas, [], ip.info, ''); return;
+            }
             const f = ip.f;
-            aplicarPlan(f.resultado, f.migrar, ip.info, 'Planificación actualizada: ' + f.anadidas.length + ' nuevas · '
-                + f.cambian.length + ' cambian de día · ' + f.quitadas.length + ' quitadas' + (f.conservadas.length ? ' · ' + f.conservadas.length + ' visitadas conservadas' : ''));
+            const dia = (o) => fmtDiaLargo(fechaOriginal(o));
+            f.anadidas.forEach(o => anotar('➕ Nueva: ' + o.nombre + ' (' + dia(o) + ')'));
+            f.cambian.forEach(c => anotar('📅 ' + c.a.nombre + ': ' + dia(c.de) + ' → ' + dia(c.a)));
+            f.quitadas.forEach(o => anotar(quitar ? '➖ Quitada del plan: ' + o.nombre + ' (' + dia(o) + ')' : '⚠ Fuera del plan nuevo (se conserva): ' + o.nombre + ' (' + dia(o) + ')'));
+            const resultado = quitar ? f.resultado : f.resultado.concat(f.quitadas.map(o => Object.assign({}, o, { fuera: true })), f.yaFuera);
+            aplicarPlan(resultado, f.migrar, ip.info, 'Planificación actualizada: ' + f.anadidas.length + ' nuevas · '
+                + f.cambian.length + ' cambian de día · ' + f.quitadas.length + (quitar ? ' quitadas' : ' fuera del plan (conservadas)')
+                + (f.conservadas.length ? ' · ' + f.conservadas.length + ' visitadas conservadas' : ''));
         }
 
         // --- EXPORTAR COMO IMAGEN (día / semana / todo) ---
@@ -1535,17 +1655,23 @@
             if (!W || typeof W.obtener !== 'function') return false;
             try {
                 const r = await W.obtener();
-                const lista = JSON.parse((r && r.datos) || '[]');
+                let toques = [];
+                try { toques = JSON.parse((r && r.toques) || '[]'); } catch (e) {}
+                if (!Array.isArray(toques) || !toques.length) return false;
+                toques.forEach(q => { q.t = Number(q.t) || 0; });
+                toques.sort((x, y) => x.t - y.t);
+                const ids = new Set(datosGlobales.map(o => o.id));
                 let cambios = false;
-                lista.forEach(it => {
-                    if (!it || !it.i) return;
-                    const nuevo = typeof it.v === 'string' ? it.v : '';
-                    const actual = visitadas[it.i] || '';
-                    if (nuevo !== actual) {
-                        if (nuevo) { visitadas[it.i] = nuevo; delete pendientes[it.i]; } else delete visitadas[it.i];
-                        cambios = true;
-                    }
+                toques.forEach(q => {
+                    if (!q || !q.i || !ids.has(q.i)) return;
+                    const nuevo = typeof q.v === 'string' ? q.v : '';
+                    const t = q.t || Date.now();
+                    if (nuevo) { visitadas[q.i] = nuevo; delete pendientes[q.i]; } else delete visitadas[q.i];
+                    registrarLocal(q.i, 'v', nuevo, t);
+                    if (nuevo) registrarLocal(q.i, 'pe', 0, t);
+                    cambios = true;
                 });
+                if (W.limpiarToques) { try { await W.limpiarToques({ hasta: Math.max.apply(null, toques.map(q => q.t)) }); } catch (e) {} }
                 return cambios;
             } catch (e) { return false; }
         }
@@ -1558,13 +1684,16 @@
         const FB = { apiKey: 'AIzaSyCyJIMQ74onthusnnErUhiREN67ZhpH3Kk', projectId: 'appplanificacion-a6087' };
         const SYNC_CAMPOS = ['v', 'm', 'pe', 'nt', 'mv', 'or'];
         const SYNC_VACIO = { v: '', m: 0, pe: 0, nt: '', mv: '', or: -1 };
-        const sync = { codigo: '', espejo: {}, planTs: 0, planSucio: false, ultimoPull: 0,
+        // espejo: lo último que sé que hay en la nube; tl: hora (de este teléfono) a la que cambié cada campo y aún no he subido;
+        // vis: último valor local visto (para detectar cuándo cambia un campo); fmt2: ya se leyeron los estados antiguos
+        const sync = { codigo: '', espejo: {}, planTs: 0, planSucio: false, ultimoPull: 0, tl: {}, vis: {}, fmt2: false,
                        ocupado: false, repetir: false, aplicando: false, estado: '', ultima: '' };
 
         function guardarSync() {
             guardarJSON('sync_config', { codigo: sync.codigo, espejo: sync.espejo, planTs: sync.planTs,
-                                         planSucio: sync.planSucio, ultimoPull: sync.ultimoPull });
+                                         planSucio: sync.planSucio, ultimoPull: sync.ultimoPull, tl: sync.tl, fmt2: sync.fmt2 });
             // El widget necesita el grupo para su botón ⟳ y para subir sus tics sin abrir la app
+            aplicarServicio();
             try {
                 if (esNativo()) {
                     const W = plugin('RutasWidget');
@@ -1573,12 +1702,51 @@
                 }
             } catch (e) {}
         }
+        // Sincronización en segundo plano: preferencia de este teléfono (activada por defecto)
+        let syncBg = true;
+        try { syncBg = localStorage.getItem('syncBg') !== '0'; } catch (e) {}
+        function aplicarServicio() {
+            try {
+                if (!esNativo()) return;
+                const W = plugin('RutasWidget');
+                if (W && typeof W.servicioSync === 'function')
+                    Promise.resolve(W.servicioSync({ activo: !!sync.codigo && syncBg })).catch(() => {});
+            } catch (e) {}
+        }
         function cargarSync() {
             const c = leerJSON('sync_config', null);
             if (c && c.codigo) {
                 sync.codigo = c.codigo; sync.espejo = c.espejo || {}; sync.planTs = c.planTs || 0;
                 sync.planSucio = !!c.planSucio; sync.ultimoPull = c.ultimoPull || 0;
+                sync.tl = c.tl || {}; sync.fmt2 = !!c.fmt2;
             }
+        }
+        function reiniciarSellos() { sync.tl = {}; sync.vis = {}; }
+        // Anota la hora de cada cambio hecho en ESTE teléfono (para decidir quién gana si dos teléfonos tocan lo mismo)
+        function marcarLocales() {
+            if (!sync.codigo) return;
+            const ahora = Date.now();
+            datosGlobales.forEach(o => {
+                const id = o.id, loc = estadoLocal(id), esp = Object.assign({}, SYNC_VACIO, sync.espejo[id] || {});
+                const nuevo = !sync.vis[id];
+                const vis = sync.vis[id] || (sync.vis[id] = Object.assign({}, esp));
+                SYNC_CAMPOS.forEach(k => {
+                    if (loc[k] !== vis[k]) {
+                        vis[k] = loc[k];
+                        const t = sync.tl[id] && sync.tl[id][k];
+                        if (!(nuevo && t)) (sync.tl[id] = sync.tl[id] || {})[k] = ahora;
+                    }
+                    if (loc[k] === esp[k] && sync.tl[id]) delete sync.tl[id][k];
+                });
+            });
+        }
+        // Cambio hecho fuera de la app con su hora real (tic del widget)
+        function registrarLocal(id, k, valor, t) {
+            if (!sync.codigo) return;
+            const esp = Object.assign({}, SYNC_VACIO, sync.espejo[id] || {});
+            const vis = sync.vis[id] || (sync.vis[id] = Object.assign({}, esp));
+            vis[k] = valor;
+            (sync.tl[id] = sync.tl[id] || {})[k] = t;
         }
 
         // Estado de una oficina en este teléfono, en el mismo formato que en la nube
@@ -1616,10 +1784,15 @@
             if (f.stringValue !== undefined) return f.stringValue;
             if (f.integerValue !== undefined) return parseInt(f.integerValue, 10);
             if (f.doubleValue !== undefined) return f.doubleValue;
+            if (f.timestampValue !== undefined) return Date.parse(f.timestampValue);
             return undefined;
         }
         const fsCampos = (obj) => { const f = {}; Object.keys(obj).forEach(k => { f[k] = fsVal(obj[k]); }); return f; };
-        const fsLeerCampos = (f) => { const o = {}; Object.keys(f || {}).forEach(k => { o[k] = fsLeer(f[k]); }); return o; };
+        const fsLeerCampos = (f) => {
+            const o = {}; Object.keys(f || {}).forEach(k => { o[k] = fsLeer(f[k]); });
+            if (f && f.ts && f.ts.timestampValue !== undefined) o.tsSrv = o.ts;   // hora del servidor (no depende del reloj de ningún móvil)
+            return o;
+        };
         async function fsEscribir(writes) {
             for (let i = 0; i < writes.length; i += 400) {
                 await fsFetch(`${FS_BASE()}:commit`, { method: 'POST', body: JSON.stringify({ writes: writes.slice(i, i + 400) }) });
@@ -1635,41 +1808,45 @@
             return docs;
         }
         // Solo los estados cambiados desde `desde` (ms); así se leen pocos documentos en cada consulta
+        const ISO = (ms) => new Date(Math.max(0, Math.round(ms))).toISOString();
         async function fsCambiados(desde) {
             const j = await fsFetch(`${FS_BASE()}/grupos/${sync.codigo}:runQuery`, { method: 'POST', body: JSON.stringify({
                 structuredQuery: { from: [{ collectionId: 'estado' }],
-                    where: { fieldFilter: { field: { fieldPath: 'ts' }, op: 'GREATER_THAN', value: { integerValue: String(Math.max(0, Math.round(desde))) } } } } }) });
+                    where: { fieldFilter: { field: { fieldPath: 'ts' }, op: 'GREATER_THAN', value: { timestampValue: ISO(desde) } } } } }) });
             return (j || []).filter(x => x.document).map(x => ({ id: x.document.name.split('/').pop(), f: fsLeerCampos(x.document.fields) }));
         }
 
         // --- Plan (las oficinas importadas) ---
         async function subirPlan() {
-            const c = sync.codigo, ts = Date.now();
+            const c = sync.codigo;
             const remotas = await fsListar('oficinas');
             const ids = new Set(datosGlobales.map(o => o.id));
             const writes = [];
             datosGlobales.forEach((o, ix) => writes.push({ update: { name: FS_NAME(`grupos/${c}/oficinas/${o.id}`), fields: fsCampos({
                 ix: ix, fecha: String(o.fecha), nombre: o.nombre, direccion: o.direccion || '', poblacion: o.poblacion || '',
-                provincia: o.provincia || '', tipo: o.tipo || '', aps: o.aps || 0 }) } }));
+                provincia: o.provincia || '', tipo: o.tipo || '', aps: o.aps || 0, fu: o.fuera ? 1 : 0 }) } }));
             remotas.forEach(r => { if (!ids.has(r.id)) {
                 writes.push({ delete: FS_NAME(`grupos/${c}/oficinas/${r.id}`) });
                 writes.push({ delete: FS_NAME(`grupos/${c}/estado/${r.id}`) });
             } });
-            writes.push({ update: { name: FS_NAME(`grupos/${c}/meta/plan`), fields: fsCampos({ ts: ts, n: datosGlobales.length }) } });
+            writes.push({ update: { name: FS_NAME(`grupos/${c}/meta/plan`), fields: fsCampos({ n: datosGlobales.length }) },
+                          updateTransforms: [{ fieldPath: 'ts', setToServerValue: 'REQUEST_TIME' }] });
             await fsEscribir(writes);
-            sync.planTs = ts; sync.planSucio = false;
+            const meta = await fsFetch(`${FS_BASE()}/grupos/${c}/meta/plan`);   // la hora del plan la pone el servidor
+            sync.planTs = meta ? (fsLeer(meta.fields.ts) || Date.now()) : Date.now(); sync.planSucio = false;
         }
         async function traerPlan(ts) {
             const docs = await fsListar('oficinas');
             docs.sort((a, b) => (a.f.ix || 0) - (b.f.ix || 0));
             datosGlobales = docs.map(d => ({ id: d.id, fecha: d.f.fecha || '', nombre: d.f.nombre || '', direccion: d.f.direccion || '',
-                poblacion: d.f.poblacion || '', provincia: d.f.provincia || '', tipo: d.f.tipo || '', aps: d.f.aps > 0 ? d.f.aps : '' }));
+                poblacion: d.f.poblacion || '', provincia: d.f.provincia || '', tipo: d.f.tipo || '', aps: d.f.aps > 0 ? d.f.aps : '', fuera: d.f.fu === 1 }));
+            anotar('🔄 Plan actualizado desde otro teléfono (' + datosGlobales.length + ' oficinas)');
             guardarJSON('rutas_guardadas', datosGlobales);
             const ids = new Set(datosGlobales.map(o => o.id));
             ocultos = ocultos.filter(id => ids.has(id));
-            [visitadas, mananas, notas, pendientes, movidas, orden, sync.espejo].forEach(m => Object.keys(m).forEach(id => { if (!ids.has(id)) delete m[id]; }));
+            [visitadas, mananas, notas, pendientes, movidas, orden, sync.espejo, sync.tl, sync.vis].forEach(m => Object.keys(m).forEach(id => { if (!ids.has(id)) delete m[id]; }));
             sync.planTs = ts;
-            sync.ultimoPull = 0;   // el plan es nuevo: se vuelven a leer todos los estados
+            sync.ultimoPull = 0; sync.fmt2 = false;   // el plan es nuevo: se vuelven a leer todos los estados
             diaSel = diaPorDefecto(); semanaSel = semanaPorDefecto();
         }
 
@@ -1686,32 +1863,57 @@
                 if (sync.planSucio && datosGlobales.length) { await subirPlan(); }
                 else if (remotoTs > sync.planTs) { await traerPlan(remotoTs); huboCambiosLocales = true; }
 
-                // 2) Estados cambiados en la nube desde la última lectura (con 2 min de margen por si los relojes difieren)
-                const cambiados = await fsCambiados(sync.ultimoPull ? sync.ultimoPull - 120000 : 0);
+                // 2) Estados cambiados en la nube desde la última lectura. La hora la pone el servidor, así que
+                //    el reloj de cada móvil no importa; 5 s de margen y la mezcla es idempotente.
+                marcarLocales();
+                const completa = !sync.fmt2;   // la primera vez se leen todos (por si hay datos de versiones anteriores)
+                const cambiados = completa ? await fsListar('estado') : await fsCambiados(sync.ultimoPull ? sync.ultimoPull - 5000 : 0);
                 const remoto = {}; let maxTs = sync.ultimoPull;
-                cambiados.forEach(d => { remoto[d.id] = d.f; if (d.f.ts > maxTs) maxTs = d.f.ts; });
+                cambiados.forEach(d => { remoto[d.id] = d.f; if (d.f.tsSrv && d.f.tsSrv > maxTs) maxTs = d.f.tsSrv; });
 
-                // 3) Mezcla campo a campo: lo cambiado aquí se sube; lo cambiado allí se aplica
-                const writes = [], nuevoEspejo = {};
+                // 3) Mezcla campo a campo. Lo cambiado solo aquí se sube; lo cambiado solo allí se aplica;
+                //    si se cambió en los dos sitios gana el cambio más reciente (hora real del cambio).
+                const writes = [], nuevoEspejo = {}, espSoloRemoto = {}, subidos = [];
                 const ahora = Date.now();
                 datosGlobales.forEach(o => {
-                    const id = o.id, loc = estadoLocal(id), esp = Object.assign({}, SYNC_VACIO, sync.espejo[id] || {});
-                    const rem = remoto[id], subir = {};
+                    const id = o.id, loc = estadoLocal(id), esp0 = Object.assign({}, SYNC_VACIO, sync.espejo[id] || {});
+                    const esp = Object.assign({}, esp0), espR = Object.assign({}, esp0);
+                    const rem = remoto[id], subir = {}, horas = {};
                     SYNC_CAMPOS.forEach(k => {
-                        if (loc[k] !== esp[k]) { subir[k] = loc[k]; esp[k] = loc[k]; }
-                        else if (rem && rem[k] !== undefined && rem[k] !== esp[k]) { aplicarCampo(id, k, rem[k]); esp[k] = rem[k]; huboCambiosLocales = true; }
+                        const cambioLoc = loc[k] !== esp0[k];
+                        const hayRem = !!rem && rem[k] !== undefined && rem[k] !== esp0[k];
+                        const tLoc = (sync.tl[id] && sync.tl[id][k]) || ahora;
+                        if (cambioLoc && hayRem && rem[k] === loc[k]) { esp[k] = espR[k] = loc[k]; return; }   // los dos pusieron lo mismo
+                        const remotoGana = hayRem && (!cambioLoc || ((rem['t_' + k] || 0) > tLoc));
+                        if (remotoGana) {
+                            aplicarCampo(id, k, rem[k]); esp[k] = espR[k] = rem[k]; huboCambiosLocales = true;
+                            (sync.vis[id] = sync.vis[id] || Object.assign({}, esp0))[k] = rem[k];
+                            if (sync.tl[id]) delete sync.tl[id][k];
+                        } else if (cambioLoc) {
+                            subir[k] = loc[k]; horas['t_' + k] = tLoc; esp[k] = loc[k];
+                        }
                     });
-                    nuevoEspejo[id] = esp;
+                    nuevoEspejo[id] = esp; espSoloRemoto[id] = espR;
                     const ks = Object.keys(subir);
                     if (ks.length) {
-                        subir.ts = ahora;
-                        writes.push({ update: { name: FS_NAME(`grupos/${sync.codigo}/estado/${id}`), fields: fsCampos(subir) },
-                                      updateMask: { fieldPaths: Object.keys(subir) } });
+                        const campos = Object.assign({}, subir, horas);
+                        writes.push({ update: { name: FS_NAME(`grupos/${sync.codigo}/estado/${id}`), fields: fsCampos(campos) },
+                                      updateMask: { fieldPaths: Object.keys(campos) },
+                                      updateTransforms: [{ fieldPath: 'ts', setToServerValue: 'REQUEST_TIME' }] });
+                        ks.forEach(k => subidos.push([id, k]));
                     }
                 });
-                if (writes.length) await fsEscribir(writes);   // si falla, el espejo no avanza y se reintenta
+                try {
+                    if (writes.length) await fsEscribir(writes);
+                } catch (e) {
+                    sync.espejo = espSoloRemoto;   // lo aplicado desde la nube queda anotado; lo que no se subió se reintenta
+                    sync.ultimoPull = maxTs;
+                    throw e;
+                }
+                subidos.forEach(([id, k]) => { if (sync.tl[id]) delete sync.tl[id][k]; });
                 sync.espejo = nuevoEspejo;
                 sync.ultimoPull = maxTs;
+                if (completa) sync.fmt2 = true;
                 sync.estado = 'ok'; sync.ultima = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
             } catch (e) {
                 sync.estado = 'error';
@@ -1752,7 +1954,7 @@
         }
         async function syncCrear() {
             if (!datosGlobales.length) { alert('Primero importa el Excel en este teléfono y después crea el grupo.'); return; }
-            sync.codigo = codigoNuevo(); sync.espejo = {}; sync.planTs = 0; sync.planSucio = true; sync.ultimoPull = 0; sync.estado = ''; sync.ultima = '';
+            sync.codigo = codigoNuevo(); reiniciarSellos(); sync.fmt2 = false; sync.espejo = {}; sync.planTs = 0; sync.planSucio = true; sync.ultimoPull = 0; sync.estado = ''; sync.ultima = '';
             guardarSync(); pintarSync();
             await sincronizar();
             avisar(sync.estado === 'ok' ? 'Grupo creado. Escribe el código en el otro teléfono (Menú → Sincronización → Unirme).' : 'Grupo creado, pero sin conexión: se subirá en cuanto haya internet.');
@@ -1767,6 +1969,7 @@
             if (!meta) { sync.codigo = antes; alert('No existe ningún grupo con ese código. Revisa que esté bien escrito.'); return; }
             if (datosGlobales.length && !confirm('Se reemplazarán las oficinas y marcas de este teléfono por las del grupo. ¿Continuar?')) { sync.codigo = antes; return; }
             datosGlobales = []; ocultos = []; visitadas = {}; mananas = {}; notas = {}; pendientes = {}; movidas = {}; orden = {};
+            reiniciarSellos(); sync.fmt2 = false;
             sync.espejo = {}; sync.planTs = 0; sync.planSucio = false; sync.ultimoPull = 0; sync.estado = ''; sync.ultima = '';
             $('syncCodigoInput').value = '';
             guardarSync(); cambio(); pintarSync();
@@ -1775,7 +1978,7 @@
         }
         function syncDesactivar() {
             if (!confirm('¿Dejar de sincronizar este teléfono? Los datos de este teléfono se conservan.')) return;
-            sync.codigo = ''; sync.espejo = {}; sync.planSucio = false; sync.ultimoPull = 0; sync.planTs = 0;
+            sync.codigo = ''; sync.espejo = {}; sync.planSucio = false; sync.ultimoPull = 0; sync.planTs = 0; reiniciarSellos(); sync.fmt2 = false;
             guardarSync(); pintarSync();
         }
         async function syncCopiar() {
@@ -1854,6 +2057,7 @@
                 let b;
                 if ((b = e.target.closest('[data-visitar]'))) alternarVisitada(b.dataset.visitar);
                 else if ((b = e.target.closest('[data-manana]'))) alternarManana(b.dataset.manana);
+                else if ((b = e.target.closest('[data-quitarfuera]'))) quitarFuera(b.dataset.quitarfuera);
                 else if ((b = e.target.closest('[data-nota]'))) abrirNota(b.dataset.nota, false);
                 else if ((b = e.target.closest('[data-pendiente]'))) alternarPendiente(b.dataset.pendiente);
                 else if ((b = e.target.closest('[data-mover]'))) abrirMover(b.dataset.mover);
@@ -1866,6 +2070,20 @@
                 pintarNav(); renderizar(); actualizarWidget();
             }));
             pintarNav();
+            $('syncBgToggle').checked = syncBg;
+            $('syncBgInfo').style.display = esNativo() ? 'block' : 'none';
+            $('syncBgBox').style.display = esNativo() ? 'flex' : 'none';
+            $('syncBgToggle').addEventListener('change', (e) => {
+                syncBg = e.target.checked;
+                try { localStorage.setItem('syncBg', syncBg ? '1' : '0'); } catch (err) {}
+                aplicarServicio();
+                avisar(syncBg ? 'Sincronización en segundo plano activada' : 'Sincronización en segundo plano desactivada');
+            });
+            $('btnHistorial').addEventListener('click', abrirHistorial);
+            $('btnHistCerrar').addEventListener('click', () => { $('modalHistorial').style.display = 'none'; });
+            $('btnDeshacerImp').addEventListener('click', deshacerImportacion);
+            $('btnQuitarFuera').addEventListener('click', () => quitarFuera(''));
+            pintarCopia();
             $('btnImpAplicar').addEventListener('click', () => confirmarImportacion('cambios'));
             $('btnImpTodo').addEventListener('click', () => confirmarImportacion('todo'));
             $('btnImpCancelar').addEventListener('click', () => { importPend = null; $('modalImport').style.display = 'none'; cerrarMenu(); });

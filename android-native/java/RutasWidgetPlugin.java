@@ -20,7 +20,7 @@ public class RutasWidgetPlugin extends Plugin {
     public void actualizar(PluginCall call) {
         String datos = call.getString("datos", "[]");
         Context ctx = getContext();
-        WidgetStore.guardar(ctx, datos);
+        WidgetStore.guardar(ctx, WidgetStore.aplicarToques(ctx, datos));   // sin perder tics del widget aún no importados
         Float texto = call.getFloat("texto", 1f);
         Float check = call.getFloat("check", 1f);
         WidgetStore.guardarAjustes(ctx,
@@ -40,10 +40,34 @@ public class RutasWidgetPlugin extends Plugin {
         call.resolve();
     }
 
+    /** Activa o desactiva la sincronización en segundo plano (servicio con notificación mínima). */
+    @PluginMethod
+    public void servicioSync(PluginCall call) {
+        Boolean activo = call.getBoolean("activo", false);
+        Context ctx = getContext();
+        boolean on = activo != null && activo;
+        WidgetSync.ponerSegundoPlano(ctx, on);
+        try {
+            if (on) BootReceiver.arrancar(ctx);
+            else ctx.stopService(new android.content.Intent(ctx, SyncService.class));
+        } catch (Exception e) {
+            // Android no deja arrancarlo ahora: se reintenta al abrir la app
+        }
+        call.resolve();
+    }
+
     @PluginMethod
     public void obtener(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("datos", WidgetStore.leer(getContext()));
+        ret.put("toques", WidgetStore.toques(getContext()));
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void limpiarToques(PluginCall call) {
+        Double hasta = call.getDouble("hasta", 0d);
+        WidgetStore.limpiarToques(getContext(), hasta == null ? 0L : (long) hasta.doubleValue());
+        call.resolve();
     }
 }

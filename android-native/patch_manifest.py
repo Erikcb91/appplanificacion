@@ -1,15 +1,14 @@
-"""Añade al AndroidManifest.xml generado por Capacitor el widget, el servicio de su lista
-y la actividad (sin pantalla) que recibe los toques sobre las filas."""
+"""Añade al AndroidManifest.xml generado por Capacitor el widget, el servicio de su lista,
+la actividad (sin pantalla) que recibe los toques, y el servicio de sincronización en segundo plano."""
 import sys
 
 ruta = sys.argv[1]
 texto = open(ruta, encoding="utf-8").read()
 
-if "RutasWidgetProvider" in texto:
-    print("Manifest ya contiene el widget; no se toca")
-    sys.exit(0)
+if "</application>" not in texto:
+    sys.exit("ERROR: no se encontró </application> en el manifest")
 
-bloque = """
+widget = """
         <receiver
             android:name=".RutasWidgetProvider"
             android:exported="true"
@@ -36,9 +35,36 @@ bloque = """
             android:theme="@android:style/Theme.NoDisplay" />
     """
 
-if "</application>" not in texto:
-    sys.exit("ERROR: no se encontró </application> en el manifest")
+segundo_plano = """
+        <service
+            android:name=".SyncService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
-texto = texto.replace("</application>", bloque + "</application>", 1)
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    """
+
+permisos = """
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+"""
+
+if "RutasWidgetProvider" not in texto:
+    texto = texto.replace("</application>", widget + "</application>", 1)
+    print("Widget, servicio y actividad añadidos al manifest")
+if ".SyncService" not in texto:
+    texto = texto.replace("</application>", segundo_plano + "</application>", 1)
+    if "FOREGROUND_SERVICE\"" not in texto:
+        i = texto.index("<application")
+        texto = texto[:i] + permisos.strip("\n") + "\n\n    " + texto[i:]
+    print("Servicio de sincronización en segundo plano añadido al manifest")
+
 open(ruta, "w", encoding="utf-8").write(texto)
-print("Widget, servicio y actividad añadidos al manifest")

@@ -58,6 +58,8 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         } else if (ACCION_SYNC.equals(accion) || ACCION_SUBIR.equals(accion)) {
             final boolean subir = ACCION_SUBIR.equals(accion);
             final String id = intent.getStringExtra(WidgetActionActivity.EXTRA_ID);
+            final String vv = intent.getStringExtra(WidgetActionActivity.EXTRA_V);
+            final long tt = intent.getLongExtra(WidgetActionActivity.EXTRA_T, System.currentTimeMillis());
             final Context app = ctx.getApplicationContext();
             final PendingResult pr = goAsync();
             new Thread(new Runnable() {
@@ -66,7 +68,7 @@ public class RutasWidgetProvider extends AppWidgetProvider {
                     String msg = null;
                     try {
                         if (subir) {
-                            WidgetSync.subirVisita(app, id);
+                            WidgetSync.subirVisita(app, id, vv == null ? "" : vv, tt);
                         } else {
                             int n = WidgetSync.refrescar(app);
                             msg = n < 0 ? "Sin conexión: no se pudo actualizar"
