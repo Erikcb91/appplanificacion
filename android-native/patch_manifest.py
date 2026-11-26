@@ -68,3 +68,25 @@ if ".SyncService" not in texto:
     print("Servicio de sincronización en segundo plano añadido al manifest")
 
 open(ruta, "w", encoding="utf-8").write(texto)
+
+# ---- Librería de Firestore (escucha en tiempo real) en android/app/build.gradle ----
+import os
+gradle = os.path.normpath(os.path.join(os.path.dirname(ruta), "..", "..", "build.gradle"))
+if os.path.exists(gradle):
+    g = open(gradle, encoding="utf-8").read()
+    if "firebase-firestore" not in g:
+        dep = ("dependencies {\n"
+               "    implementation platform('com.google.firebase:firebase-bom:32.2.3')\n"
+               "    implementation 'com.google.firebase:firebase-firestore'\n")
+        i = g.index("\ndependencies {")
+        g = g[:i + 1] + dep + g[i + len("\ndependencies {") + 1:]
+        pk = ("android {\n    packagingOptions {\n        resources {\n"
+              "            excludes += ['META-INF/INDEX.LIST', 'META-INF/DEPENDENCIES']\n        }\n    }\n")
+        j = g.index("android {")
+        g = g[:j] + pk + g[j + len("android {") + 1:]
+        open(gradle, "w", encoding="utf-8").write(g)
+        print("Firestore añadido a", gradle)
+    else:
+        print("Firestore ya estaba en", gradle)
+else:
+    sys.exit("ERROR: no se encontró " + gradle)
