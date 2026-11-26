@@ -35,7 +35,7 @@ public class RutasWidgetPlugin extends Plugin {
     public void configurarSync(PluginCall call) {
         Double ult = call.getDouble("ultimoPull", 0d);
         WidgetSync.configurar(getContext(), call.getString("codigo", ""), call.getString("apiKey", ""),
-                call.getString("proyecto", ""), ult == null ? 0L : (long) ult.doubleValue());
+                call.getString("proyecto", ""), call.getString("appId", ""), ult == null ? 0L : (long) ult.doubleValue());
         RutasWidgetProvider.actualizarTodos(getContext());
         call.resolve();
     }

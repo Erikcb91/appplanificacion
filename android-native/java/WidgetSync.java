@@ -32,12 +32,12 @@ final class WidgetSync {
 
     // ---------- configuración (la manda la app) ----------
 
-    static void configurar(Context c, String codigo, String apiKey, String proyecto, long ultimoPullApp) {
+    static void configurar(Context c, String codigo, String apiKey, String proyecto, String appId, long ultimoPullApp) {
         SharedPreferences.Editor e = prefs(c).edit();
         if (codigo == null || codigo.isEmpty()) {
             e.clear();
         } else {
-            e.putString("codigo", codigo).putString("key", apiKey).putString("proyecto", proyecto);
+            e.putString("codigo", codigo).putString("key", apiKey).putString("proyecto", proyecto).putString("appid", appId == null ? "" : appId);
             if (!codigo.equals(prefs(c).getString("codigo", ""))) e.remove("pull").remove("cola");
             // lo que la app ya ha leído no hace falta volver a descargarlo
             if (ultimoPullApp > prefs(c).getLong("pull", 0L)) e.putLong("pull", ultimoPullApp);
@@ -53,6 +53,12 @@ final class WidgetSync {
     static void ponerSegundoPlano(Context c, boolean on) {
         c.getSharedPreferences("rutas_bg", Context.MODE_PRIVATE).edit().putBoolean("on", on).apply();
     }
+
+    static String codigo(Context c) { return prefs(c).getString("codigo", ""); }
+    static String apiKey(Context c) { return prefs(c).getString("key", ""); }
+    static String proyecto(Context c) { return prefs(c).getString("proyecto", ""); }
+    static String appId(Context c) { return prefs(c).getString("appid", ""); }
+    static long pull(Context c) { return prefs(c).getLong("pull", 0L); }
 
     static boolean activo(Context c) {
         return !prefs(c).getString("codigo", "").isEmpty();
@@ -310,21 +316,45 @@ final class WidgetSync {
             String q = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"estado\"}],\"where\":{\"fieldFilter\":"
                     + "{\"field\":{\"fieldPath\":\"ts\"},\"op\":\"GREATER_THAN\",\"value\":{\"timestampValue\":\"" + iso(desde) + "\"}}}}}";
             String resp = http(base(c) + "/grupos/" + prefs(c).getString("codigo", "") + ":runQuery" + clave(c), q);
-            JSONArray q0;
-            synchronized (LOCK_COLA) { q0 = cola(c); }
-            java.util.Set<String> enCola = new java.util.HashSet<String>();
-            for (int k = 0; k < q0.length(); k++) { JSONObject eo = q0.optJSONObject(k); if (eo != null) enCola.add(eo.optString("i")); }
-            long[] r;
-            synchronized (WidgetStore.LOCK) {   // sin pisar un tic hecho en el widget mientras tanto
-                List<WidgetModel.Item> items = WidgetModel.parse(WidgetStore.leer(c));
-                r = aplicar(items, resp, enCola);
-                if (r[0] > 0) WidgetStore.guardar(c, WidgetModel.toJson(items));
-            }
-            if (r[1] > prefs(c).getLong("pull", 0L)) prefs(c).edit().putLong("pull", r[1]).apply();
+            long[] r = aplicarRespuesta(c, resp);
             return (int) r[0];
         } catch (Exception e) {
             return -1;
         }
+    }
+
+    /**
+     * Aplica al widget una respuesta con documentos de estado (de runQuery o de la escucha en tiempo real).
+     * Devuelve {cambios, tsMax} y adelanta el punto de lectura.
+     */
+    static long[] aplicarRespuesta(Context c, String resp) {
+        JSONArray q0;
+        synchronized (LOCK_COLA) { q0 = cola(c); }
+        java.util.Set<String> enCola = new java.util.HashSet<String>();
+        for (int k = 0; k < q0.length(); k++) { JSONObject eo = q0.optJSONObject(k); if (eo != null) enCola.add(eo.optString("i")); }
+        long[] r;
+        synchronized (WidgetStore.LOCK) {   // sin pisar un tic hecho en el widget mientras tanto
+            List<WidgetModel.Item> items = WidgetModel.parse(WidgetStore.leer(c));
+            r = aplicar(items, resp, enCola);
+            if (r[0] > 0) WidgetStore.guardar(c, WidgetModel.toJson(items));
+        }
+        if (r[1] > prefs(c).getLong("pull", 0L)) prefs(c).edit().putLong("pull", r[1]).apply();
+        return r;
+    }
+
+    /** Pasa un documento de la librería de Firestore al mismo formato JSON que devuelve la API REST. */
+    static JSONObject documentoJson(String proyecto, String codigo, String id, java.util.Map<String, Object> datos) throws Exception {
+        JSONObject campos = new JSONObject();
+        for (java.util.Map.Entry<String, Object> e : datos.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof String) campos.put(e.getKey(), campo("stringValue", (String) v));
+            else if (v instanceof Long || v instanceof Integer) campos.put(e.getKey(), campo("integerValue", String.valueOf(((Number) v).longValue())));
+            else if (v instanceof java.util.Date) campos.put(e.getKey(), campo("timestampValue", iso(((java.util.Date) v).getTime())));
+        }
+        JSONObject d = new JSONObject()
+                .put("name", "projects/" + proyecto + "/databases/(default)/documents/grupos/" + codigo + "/estado/" + id)
+                .put("fields", campos);
+        return new JSONObject().put("document", d);
     }
 
     /** Botón ⟳: primero sube lo que quedó en cola (solo tics del widget) y luego baja lo nuevo. */

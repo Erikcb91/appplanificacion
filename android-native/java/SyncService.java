@@ -24,8 +24,9 @@ public class SyncService extends Service {
 
     static final String CANAL = "rutas_sync";
     private static final int ID_NOTIF = 4201;
-    private static final long CADA_ACTIVO = 15000L;      // pantalla encendida
+    private static final long CADA_ACTIVO = 5000L;       // pantalla encendida
     private static final long CADA_APAGADO = 60000L;     // pantalla apagada
+    private static final long CADA_RESPALDO = 45000L;    // con la escucha en tiempo real activa, solo como seguro
     private static final long MAX_ESPERA = 120000L;
 
     private final Object lock = new Object();
@@ -128,6 +129,13 @@ public class SyncService extends Service {
             if (!WidgetSync.activo(app) || !WidgetSync.segundoPlano(app)) {
                 break;
             }
+            boolean escucha = false;
+            try {
+                SdkEscucha.asegurar(app);   // escucha en tiempo real (~1 s)
+                escucha = SdkEscucha.activa();
+            } catch (Throwable t) {
+                escucha = false;            // sin librería o sin permiso: se consulta cada pocos segundos
+            }
             try {
                 int n = WidgetSync.refrescar(app);
                 if (n > 0) RutasWidgetProvider.actualizarTodos(app);
@@ -135,7 +143,7 @@ public class SyncService extends Service {
             } catch (Exception e) {
                 espera = Math.min(MAX_ESPERA, espera == 0 ? 30000L : espera * 2);
             }
-            long ms = Math.max(intervalo(), espera);
+            long ms = Math.max(escucha ? CADA_RESPALDO : intervalo(), espera);
             synchronized (lock) {
                 if (!despertar) {
                     try {
@@ -148,6 +156,7 @@ public class SyncService extends Service {
             }
         }
         corriendo = false;
+        try { SdkEscucha.parar(); } catch (Throwable t) { /* sin librería */ }
         stopSelf();
     }
 
@@ -155,6 +164,7 @@ public class SyncService extends Service {
     public void onDestroy() {
         corriendo = false;
         despertar();
+        try { SdkEscucha.parar(); } catch (Throwable t) { /* sin librería */ }
         if (pantalla != null) {
             try {
                 unregisterReceiver(pantalla);

@@ -393,7 +393,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="sync-sub" id="syncBgInfo" style="display:none;">Mantiene el widget al día con la app cerrada (cada ~15 s con la pantalla encendida). Android muestra una notificación mínima y silenciosa; puedes ocultarla desde los ajustes de notificaciones de la app. Para que no la detenga, pon la batería de la app en «Sin restricciones».</div>
+                    <div class="sync-sub" id="syncBgInfo" style="display:none;">Mantiene el widget al día con la app cerrada (casi al instante). Android muestra una notificación mínima y silenciosa; puedes ocultarla desde los ajustes de notificaciones de la app. Para que no la detenga, pon la batería de la app en «Sin restricciones».</div>
                     <div class="fila-botones-sync">
                         <button class="btn-sync" id="btnSyncCopiar">Copiar código</button>
                         <button class="btn-sync" id="btnSyncOff">Desactivar</button>
@@ -1215,7 +1215,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        const APP_VERSION = 'v25';
+        const APP_VERSION = 'v27';
         // Aviso temporal abajo de la pantalla
         function avisar(texto) {
             let t = $('toastAviso');
@@ -1681,7 +1681,7 @@
         }
 
         // ===================== SINCRONIZACIÓN ENTRE TELÉFONOS (Firestore, API REST) =====================
-        const FB = { apiKey: 'AIzaSyCyJIMQ74onthusnnErUhiREN67ZhpH3Kk', projectId: 'appplanificacion-a6087' };
+        const FB = { apiKey: 'AIzaSyCyJIMQ74onthusnnErUhiREN67ZhpH3Kk', projectId: 'appplanificacion-a6087', appId: '1:177489975844:web:931c9def00c6163cc196b1' };
         const SYNC_CAMPOS = ['v', 'm', 'pe', 'nt', 'mv', 'or'];
         const SYNC_VACIO = { v: '', m: 0, pe: 0, nt: '', mv: '', or: -1 };
         // espejo: lo último que sé que hay en la nube; tl: hora (de este teléfono) a la que cambié cada campo y aún no he subido;
@@ -1698,7 +1698,7 @@
                 if (esNativo()) {
                     const W = plugin('RutasWidget');
                     if (W && typeof W.configurarSync === 'function')
-                        Promise.resolve(W.configurarSync({ codigo: sync.codigo || '', apiKey: FB.apiKey, proyecto: FB.projectId, ultimoPull: sync.ultimoPull || 0 })).catch(() => {});
+                        Promise.resolve(W.configurarSync({ codigo: sync.codigo || '', apiKey: FB.apiKey, proyecto: FB.projectId, appId: FB.appId, ultimoPull: sync.ultimoPull || 0 })).catch(() => {});
                 }
             } catch (e) {}
         }

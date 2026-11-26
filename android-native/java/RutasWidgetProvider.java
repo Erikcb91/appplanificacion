@@ -151,7 +151,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.widget_prov, sp, 9.5f * k * t);
         v.setTextViewTextSize(R.id.widget_resumen, sp, 11.5f * k * t);
         v.setTextViewTextSize(R.id.widget_hoy, sp, 12 * k);
-        v.setTextViewTextSize(R.id.widget_sync, sp, 20 * k);
         v.setTextViewTextSize(R.id.widget_prev, sp, 28 * k);
         v.setTextViewTextSize(R.id.widget_next, sp, 28 * k);
         if (android.os.Build.VERSION.SDK_INT >= 31) {
@@ -176,8 +175,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setTextColor(R.id.widget_titulo, cabFg);
         v.setTextColor(R.id.widget_prov, cabFg);
         v.setTextColor(R.id.widget_prev, acento);
-        v.setTextColor(R.id.widget_sync, acento);
-        v.setViewVisibility(R.id.widget_sync, WidgetSync.activo(ctx) ? View.VISIBLE : View.GONE);
         v.setTextColor(R.id.widget_next, acento);
         List<WidgetModel.Item> delDia = WidgetModel.delDia(items, dia);
         String prov = WidgetModel.unir(WidgetModel.provincias(delDia), " · ");
@@ -219,7 +216,6 @@ public class RutasWidgetProvider extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.widget_prev, broadcast(ctx, 1, ACCION_PREV));
         v.setOnClickPendingIntent(R.id.widget_next, broadcast(ctx, 2, ACCION_NEXT));
         v.setOnClickPendingIntent(R.id.widget_hoy, broadcast(ctx, 3, ACCION_HOY));
-        v.setOnClickPendingIntent(R.id.widget_sync, broadcast(ctx, 5, ACCION_SYNC));
 
         Intent abrir = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         if (abrir != null) {
